@@ -1141,82 +1141,109 @@ function backToDetectHome() {
     document.getElementById('detectBtns').style.display = 'none';
 }
 
-// ---- 下载测速 ----
+// ---- 下载测速（5源×2轮=10样本，去极值均值）----
 function testDownload(onUpdate) {
     return new Promise(function(resolve) {
         var files = [
             'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js',
             'https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.min.js',
-            'https://unpkg.com/react@18.3.1/umd/react.production.min.js'
+            'https://unpkg.com/react@18.3.1/umd/react.production.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+            'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js'
         ];
+        var rounds = 2;
         var results = [];
         var done = 0;
-        files.forEach(function(url) {
-            var start = performance.now();
-            fetch(url + '?t=' + start, { cache: 'no-store' })
-                .then(function(r) { return r.blob(); })
-                .then(function(blob) {
-                    var elapsed = (performance.now() - start) / 1000;
-                    var bps = (blob.size * 8) / elapsed;
-                    results.push(bps);
-                    if (onUpdate) onUpdate(bps);
-                    done++;
-                    if (done >= files.length) resolve(results.length > 0 ? Math.max.apply(null, results) : 0);
-                })
-                .catch(function() {
-                    done++;
-                    if (done >= files.length) resolve(results.length > 0 ? Math.max.apply(null, results) : 0);
-                });
-        });
+        var total = files.length * rounds;
+        for (var r = 0; r < rounds; r++) {
+            files.forEach(function(url) {
+                var start = performance.now();
+                fetch(url + '?t=' + start + 'r' + r, { cache: 'no-store' })
+                    .then(function(resp) { return resp.blob(); })
+                    .then(function(blob) {
+                        var elapsed = (performance.now() - start) / 1000;
+                        var bps = (blob.size * 8) / elapsed;
+                        results.push(bps);
+                        done++;
+                        if (onUpdate) onUpdate(bps, done, total);
+                        if (done >= total) resolve(trimmedMean(results));
+                    })
+                    .catch(function() {
+                        done++;
+                        if (done >= total) resolve(results.length > 0 ? trimmedMean(results) : 0);
+                    });
+            });
+        }
     });
 }
 
-// ---- 上传测速 ----
+// ---- 上传测速（3轮×4MB，去极值均值）----
 function testUpload(onUpdate) {
     return new Promise(function(resolve) {
-        var data = new Blob([new Uint8Array(2 * 1024 * 1024)]);
-        var start = performance.now();
-        fetch('https://speed.cloudflare.com/__up', { method: 'POST', body: data, cache: 'no-store' })
-            .then(function() {
-                var elapsed = (performance.now() - start) / 1000;
-                var bps = (data.size * 8) / elapsed;
-                if (onUpdate) onUpdate(bps);
-                resolve(bps);
-            })
-            .catch(function() {
-                fetch('https://httpbin.org/post', { method: 'POST', body: data, cache: 'no-store' })
-                    .then(function() {
-                        var elapsed = (performance.now() - start) / 1000;
-                        var bps = (data.size * 8) / elapsed;
-                        if (onUpdate) onUpdate(bps);
-                        resolve(bps);
-                    })
-                    .catch(function() { resolve(0); });
-            });
+        var rounds = 3;
+        var results = [];
+        var done = 0;
+        function doRound(i) {
+            if (i >= rounds) {
+                resolve(results.length > 0 ? trimmedMean(results) : 0);
+                return;
+            }
+            var data = new Blob([new Uint8Array(4 * 1024 * 1024)]);
+            var start = performance.now();
+            fetch('https://speed.cloudflare.com/__up', { method: 'POST', body: data, cache: 'no-store' })
+                .then(function() {
+                    var elapsed = (performance.now() - start) / 1000;
+                    var bps = (data.size * 8) / elapsed;
+                    results.push(bps);
+                    done++;
+                    if (onUpdate) onUpdate(bps, done, rounds);
+                    doRound(i + 1);
+                })
+                .catch(function() {
+                    fetch('https://httpbin.org/post', { method: 'POST', body: data, cache: 'no-store' })
+                        .then(function() {
+                            var elapsed = (performance.now() - start) / 1000;
+                            var bps = (data.size * 8) / elapsed;
+                            results.push(bps);
+                            done++;
+                            if (onUpdate) onUpdate(bps, done, rounds);
+                            doRound(i + 1);
+                        })
+                        .catch(function() {
+                            done++;
+                            if (onUpdate) onUpdate(0, done, rounds);
+                            doRound(i + 1);
+                        });
+                });
+        }
+        doRound(0);
     });
 }
 
-// ---- Ping检测 ----
-function testPing(targetUrls) {
+// ---- Ping检测（8次采样，200ms间隔，支持进度回调）----
+function testPing(targetUrls, onProgress) {
     var targets = targetUrls || [
         'https://www.baidu.com/favicon.ico',
         'https://www.qq.com/favicon.ico',
         'https://www.taobao.com/favicon.ico'
     ];
+    var pingCount = 8;
     return new Promise(function(resolve) {
         var allRTTs = [];
         var failedPings = 0;
-        var totalPings = targets.length * 4;
+        var totalPings = targets.length * pingCount;
         var donePings = 0;
 
         targets.forEach(function(url) {
-            for (var i = 0; i < 4; i++) {
+            for (var i = 0; i < pingCount; i++) {
                 (function(idx) {
                     setTimeout(function() {
                         var start = performance.now();
                         fetch(url + '?t=' + start, { method: 'HEAD', cache: 'no-store', mode: 'no-cors' })
                             .then(function() {
-                                allRTTs.push(performance.now() - start);
+                                var rtt = performance.now() - start;
+                                allRTTs.push(rtt);
+                                if (onProgress) onProgress(rtt, donePings + 1, totalPings);
                             })
                             .catch(function() { failedPings++; })
                             .finally(function() {
@@ -1235,7 +1262,7 @@ function testPing(targetUrls) {
                                     });
                                 }
                             });
-                    }, idx * 300);
+                    }, idx * 200);
                 })(i);
             }
         });
@@ -1249,28 +1276,60 @@ function formatSpeed(bps) {
     return mbps.toFixed(2);
 }
 
-// ============ 一键测速 ============
+function estimateBroadband(mbps) {
+    if (mbps < 50) return '不足100M宽带';
+    if (mbps < 150) return '相当于100M宽带';
+    if (mbps < 250) return '相当于200M宽带';
+    if (mbps < 400) return '相当于300M宽带';
+    if (mbps < 700) return '相当于500M宽带';
+    if (mbps < 1500) return '相当于1000M宽带';
+    return '相当于2000M宽带';
+}
+
+function trimmedMean(arr) {
+    if (arr.length === 0) return 0;
+    if (arr.length <= 2) return arr.reduce(function(a, b) { return a + b; }, 0) / arr.length;
+    arr.sort(function(a, b) { return a - b; });
+    var trim = Math.floor(arr.length * 0.2);
+    var trimmed = arr.slice(trim, arr.length - trim);
+    if (trimmed.length === 0) trimmed = arr.slice(1, -1);
+    if (trimmed.length === 0) return arr[0];
+    return trimmed.reduce(function(a, b) { return a + b; }, 0) / trimmed.length;
+}
+
+// ============ 一键测速（下载10样本+上传3轮，显示进度与宽带估算）============
 async function runSpeedTest() {
     showDetectResult(
         '<div class="detect-card"><div class="detect-status">' +
-        '<div class="icon">⏳</div><div class="text">正在测试下载速度...</div>' +
-        '</div><div class="test-progress"><div class="test-progress-bar" id="spProg" style="width:10%"></div></div></div>' +
+        '<div class="icon">⏳</div><div class="text" id="spStatus">正在测试下载速度...</div>' +
+        '</div><div class="test-progress"><div class="test-progress-bar" id="spProg" style="width:5%"></div></div></div>' +
         '<div id="spLive"></div>'
     );
 
-    // 下载
-    var dlBps = await testDownload(function(bps) {
+    // 下载（5源×2轮=10样本）
+    var dlBps = await testDownload(function(bps, done, total) {
         var el = document.getElementById('spLive');
-        if (el) el.innerHTML = '<div class="detect-card"><div class="speed-duo"><div class="speed-duo-item"><div class="num">' + formatSpeed(bps) + '</div><div class="unit">Mbps</div><div class="label">下载速度</div></div><div class="speed-duo-item"><div class="num">...</div><div class="unit">Mbps</div><div class="label">上传速度</div></div></div></div>';
+        var st = document.getElementById('spStatus');
+        var pg = document.getElementById('spProg');
+        if (st) st.textContent = '正在测试下载速度（' + done + '/' + total + '）...';
+        if (pg) pg.style.width = (5 + done / total * 40) + '%';
+        var liveGrade = bps / 1000000 >= 50 ? 'good' : bps / 1000000 >= 10 ? 'ok' : 'bad';
+        if (el) el.innerHTML = '<div class="detect-card"><div class="speed-duo"><div class="speed-duo-item"><div class="num ' + liveGrade + '">' + formatSpeed(bps) + '</div><div class="unit">Mbps</div><div class="label">下载速度</div></div><div class="speed-duo-item"><div class="num" style="color:#ccc;">...</div><div class="unit">Mbps</div><div class="label">上传速度</div></div></div></div>';
     });
 
     var prog = document.getElementById('spProg');
     if (prog) prog.style.width = '50%';
 
-    // 上传
-    var ulBps = await testUpload(function(bps) {
+    // 上传（3轮×4MB）
+    var ulBps = await testUpload(function(bps, done, total) {
         var el = document.getElementById('spLive');
-        if (el) el.innerHTML = '<div class="detect-card"><div class="speed-duo"><div class="speed-duo-item"><div class="num">' + formatSpeed(dlBps) + '</div><div class="unit">Mbps</div><div class="label">下载速度</div></div><div class="speed-duo-item"><div class="num">' + formatSpeed(bps) + '</div><div class="unit">Mbps</div><div class="label">上传速度</div></div></div></div>';
+        var st = document.getElementById('spStatus');
+        var pg = document.getElementById('spProg');
+        if (st) st.textContent = '正在测试上传速度（' + done + '/' + total + '）...';
+        if (pg) pg.style.width = (50 + done / total * 45) + '%';
+        var liveGrade = bps / 1000000 >= 20 ? 'good' : bps / 1000000 >= 5 ? 'ok' : 'bad';
+        var dlGrade = dlBps / 1000000 >= 50 ? 'good' : dlBps / 1000000 >= 10 ? 'ok' : 'bad';
+        if (el) el.innerHTML = '<div class="detect-card"><div class="speed-duo"><div class="speed-duo-item"><div class="num ' + dlGrade + '">' + formatSpeed(dlBps) + '</div><div class="unit">Mbps</div><div class="label">下载速度</div></div><div class="speed-duo-item"><div class="num ' + liveGrade + '">' + formatSpeed(bps) + '</div><div class="unit">Mbps</div><div class="label">上传速度</div></div></div></div>';
     });
 
     if (prog) prog.style.width = '100%';
@@ -1279,31 +1338,33 @@ async function runSpeedTest() {
     var ulMbps = formatSpeed(ulBps);
     var dlGrade = dlBps / 1000000 >= 50 ? 'good' : dlBps / 1000000 >= 10 ? 'ok' : 'bad';
     var ulGrade = ulBps / 1000000 >= 20 ? 'good' : ulBps / 1000000 >= 5 ? 'ok' : 'bad';
+    var broadband = estimateBroadband(dlBps / 1000000);
 
     showDetectResult(
         '<div class="detect-card" style="text-align:center;padding:20px 0;">' +
         '<div style="font-size:14px;color:#999;margin-bottom:16px;">测速结果</div>' +
         '<div class="speed-duo"><div class="speed-duo-item"><div class="num ' + dlGrade + '">' + dlMbps + '</div><div class="unit">Mbps</div><div class="label">下载速度</div></div>' +
-        '<div class="speed-duo-item"><div class="num ' + ulGrade + '">' + ulMbps + '</div><div class="unit">Mbps</div><div class="label">上传速度</div></div></div></div>'
+        '<div class="speed-duo-item"><div class="num ' + ulGrade + '">' + ulMbps + '</div><div class="unit">Mbps</div><div class="label">上传速度</div></div></div>' +
+        '<div style="margin-top:16px;padding:10px 24px;background:#f0f7ff;border-radius:8px;display:inline-block;font-size:15px;color:#2b7de9;font-weight:600;">' + broadband + '</div>' +
+        '</div>'
     );
 }
 
-// ============ WiFi信号检测 ============
+// ============ WiFi信号检测（实时动态显示检测数据）============
 async function runWifiDetect() {
     showDetectResult(
         '<div class="detect-card"><div class="detect-status">' +
-        '<div class="icon">⏳</div><div class="text">正在检测WiFi信号...</div></div></div>'
+        '<div class="icon">📡</div><div class="text" id="wifiStep">正在获取网络信息...</div>' +
+        '</div></div>' +
+        '<div class="detect-card" id="wifiLive" style="display:none;">' +
+        '<h3>实时检测数据</h3><div id="wifiLiveList"></div></div>'
     );
 
     var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-    // 先做一次简单Ping来辅助评估
-    var pingR = await testPing(['https://www.baidu.com/favicon.ico']);
-    _cachedPing = pingR;
-
     var score = 0;
     var items = [];
 
-    // 网络类型
+    // 1. 网络类型（即时获取）
     if (conn && conn.effectiveType) {
         var et = conn.effectiveType;
         var etGrade = et === '4g' ? 'good' : et === '3g' ? 'ok' : 'bad';
@@ -1314,7 +1375,7 @@ async function runWifiDetect() {
         score += 20;
     }
 
-    // 估算带宽
+    // 2. 估算带宽（即时获取）
     if (conn && conn.downlink) {
         var dl = conn.downlink;
         var dlG = dl >= 20 ? 'good' : dl >= 5 ? 'ok' : 'bad';
@@ -1325,16 +1386,50 @@ async function runWifiDetect() {
         score += 10;
     }
 
-    // 延迟
+    // 显示已获取的项目
+    var liveEl = document.getElementById('wifiLive');
+    var listEl = document.getElementById('wifiLiveList');
+    if (liveEl && listEl) {
+        liveEl.style.display = 'block';
+        listEl.innerHTML = items.map(function(it) {
+            return '<div class="detect-row"><span class="label">' + it.label + '</span><span class="value ' + it.grade + '">' + it.value + '</span></div>';
+        }).join('');
+    }
+
+    // 3. Ping检测（8次采样，实时显示每次延迟值）
+    var stepEl = document.getElementById('wifiStep');
+    if (stepEl) stepEl.textContent = '正在检测网络延迟（8次采样）...';
+
+    var pingRTTs = [];
+    var pingR = await testPing(['https://www.baidu.com/favicon.ico'], function(rtt, done, total) {
+        pingRTTs.push(Math.round(rtt));
+        if (stepEl) stepEl.textContent = '正在检测网络延迟（' + done + '/' + total + '）...';
+        // 实时更新检测列表
+        var html = items.map(function(it) {
+            return '<div class="detect-row"><span class="label">' + it.label + '</span><span class="value ' + it.grade + '">' + it.value + '</span></div>';
+        }).join('');
+        // 添加延迟采样进度
+        html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #eee;">';
+        html += '<div style="font-size:12px;color:#999;margin-bottom:6px;">延迟采样 (' + done + '/' + total + ')</div>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+        pingRTTs.forEach(function(v) {
+            var c = v <= 30 ? '#51cf66' : v <= 80 ? '#2b7de9' : '#ff6b6b';
+            html += '<span style="display:inline-block;padding:3px 8px;border-radius:4px;font-size:12px;background:#f5f5f7;color:' + c + ';">' + v + ' ms</span>';
+        });
+        html += '</div></div>';
+        if (listEl) listEl.innerHTML = html;
+    });
+    _cachedPing = pingR;
+
     var pingGrade = pingR.ping <= 30 ? 'good' : pingR.ping <= 80 ? 'ok' : 'bad';
     items.push({ label: '网络延迟', value: pingR.ping + ' ms', grade: pingGrade });
     if (pingR.ping <= 30) score += 25; else if (pingR.ping <= 80) score += 15; else score += 5;
 
-    // 丢包
     var lossGrade = pingR.loss === 0 ? 'good' : pingR.loss <= 5 ? 'ok' : 'bad';
     items.push({ label: '丢包率', value: pingR.loss + '%', grade: lossGrade });
     if (pingR.loss === 0) score += 20; else if (pingR.loss <= 5) score += 10; else score += 2;
 
+    // 最终结果
     var grade = score >= 80 ? '优' : score >= 50 ? '良' : score >= 25 ? '中' : '差';
     var gradeColor = score >= 80 ? '#51cf66' : score >= 50 ? '#2b7de9' : score >= 25 ? '#f0a020' : '#ff6b6b';
 
@@ -1347,6 +1442,16 @@ async function runWifiDetect() {
         html += '<div class="detect-row"><span class="label">' + it.label + '</span><span class="value ' + it.grade + '">' + it.value + '</span></div>';
     });
     html += '</div>';
+    // 延迟采样记录
+    if (pingRTTs.length > 0) {
+        html += '<div class="detect-card"><h3>延迟采样记录</h3>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+        pingRTTs.forEach(function(v, i) {
+            var c = v <= 30 ? '#51cf66' : v <= 80 ? '#2b7de9' : '#ff6b6b';
+            html += '<span style="display:inline-block;padding:4px 10px;border-radius:6px;font-size:13px;background:#f5f5f7;color:' + c + ';">#' + (i+1) + ' ' + v + 'ms</span>';
+        });
+        html += '</div></div>';
+    }
 
     showDetectResult(html);
 }
