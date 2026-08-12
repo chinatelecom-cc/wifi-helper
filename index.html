@@ -1240,24 +1240,36 @@ function testDownload(onUpdate) {
     });
 }
 
-// ---- 上传测速（3路并行上传Cloudflare 16MB，聚合带宽）----
+// ---- 上传测速（3路并行上传Cloudflare 4MB，聚合带宽+15秒超时）----
 function testUpload(onUpdate) {
     return new Promise(function(resolve) {
         var parallel = 3;           // 3路并行
-        var uploadSize = 16 * 1024 * 1024; // 16MB per connection
+        var uploadSize = 4 * 1024 * 1024; // 4MB per connection（减小大小避免超时）
         var results = [];
         var completed = 0;
         var stopped = false;
+        var startTime = performance.now();
+
+        // 15秒超时保护
+        var timeout = setTimeout(function() {
+            if (!stopped) {
+                stopped = true;
+                resolve(results.length > 0 ? Math.max.apply(null, results) : 0);
+            }
+        }, 15000);
 
         function runOne(idx) {
             var data = new Blob([new Uint8Array(uploadSize)]);
             var start = performance.now();
+            var ctrl = new AbortController();
             fetch('https://speed.cloudflare.com/__up', {
                 method: 'POST',
                 body: data,
-                cache: 'no-store'
+                cache: 'no-store',
+                signal: ctrl.signal
             })
                 .then(function() {
+                    if (stopped) return;
                     var elapsed = (performance.now() - start) / 1000;
                     var bps = (data.size * 8) / elapsed;
                     results.push(bps);
@@ -1268,18 +1280,20 @@ function testUpload(onUpdate) {
                     }
                     if (completed >= parallel && !stopped) {
                         stopped = true;
-                        // 返回3路并行上传的聚合带宽（总bytes / 最长时间）
+                        clearTimeout(timeout);
                         resolve(Math.max.apply(null, results));
                     }
                 })
                 .catch(function() {
-                    // Cloudflare失败，尝试httbin
+                    if (stopped) return;
+                    // Cloudflare失败，尝试httpbin
                     fetch('https://httpbin.org/post', {
                         method: 'POST',
                         body: data,
                         cache: 'no-store'
                     })
                         .then(function() {
+                            if (stopped) return;
                             var elapsed = (performance.now() - start) / 1000;
                             var bps = (data.size * 8) / elapsed;
                             results.push(bps);
@@ -1290,13 +1304,16 @@ function testUpload(onUpdate) {
                             }
                             if (completed >= parallel && !stopped) {
                                 stopped = true;
+                                clearTimeout(timeout);
                                 resolve(Math.max.apply(null, results));
                             }
                         })
                         .catch(function() {
+                            if (stopped) return;
                             completed++;
                             if (completed >= parallel && !stopped) {
                                 stopped = true;
+                                clearTimeout(timeout);
                                 resolve(results.length > 0 ? Math.max.apply(null, results) : 0);
                             }
                         });
