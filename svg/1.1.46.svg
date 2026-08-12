@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="79px" height="125px" viewBox="0 0 79 125" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>编组 22备份</title>
+    <g id="主页面" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="编组-22备份" transform="translate(0.000000, 1.000000)">
+            <rect id="矩形" fill="#FFFBF2" x="0" y="23.0625" width="13.4814815" height="24.984375"></rect>
+            <line x1="15.8888889" y1="48.5273438" x2="50.5555556" y2="48.5273438" id="直线-9" stroke="#000000" stroke-width="1.92592593" stroke-linecap="square"></line>
+            <line x1="15.8888889" y1="22.5820312" x2="50.5555556" y2="22.5820312" id="直线-9备份" stroke="#000000" stroke-width="1.92592593" stroke-linecap="square"></line>
+            <line x1="2.40740741" y1="65.8242188" x2="57.2962963" y2="65.8242188" id="直线-9备份-2" stroke="#000000" stroke-width="1.92592593" stroke-linecap="square"></line>
+            <line x1="73.6666667" y1="65.8242188" x2="76.5555556" y2="65.8242188" id="直线-9备份-3" stroke="#000000" stroke-width="1.92592593" stroke-linecap="square"></line>
+            <line x1="71.7407407" y1="111.949219" x2="76.5555556" y2="111.949219" id="直线-9备份-4" stroke="#000000" stroke-width="1.92592593" stroke-linecap="square"></line>
+            <line x1="2.40740741" y1="111.949219" x2="7.22222222" y2="111.949219" id="直线-9备份-5" stroke="#000000" stroke-width="1.92592593" stroke-linecap="square"></line>
+            <polyline id="路径" stroke="#000000" stroke-width="1.92592593" points="70.3505599 0 78 0 78 123 0.962962963 123 0.962962963 48.5273438 13.9242158 48.5273438 13.9242158 22.5820312 0.962962963 22.5820312 0.962962963 0 54.9672207 0"></polyline>
+        </g>
+    </g>
+</svg>
