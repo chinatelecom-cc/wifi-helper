@@ -1141,55 +1141,98 @@ function backToDetectHome() {
     document.getElementById('detectBtns').style.display = 'none';
 }
 
-// ---- 下载测速（Cloudflare大文件+多连接并行，排除握手时间）----
+// ---- 下载测速（国内CDN多源+流式Reader+5秒持续+多连接并行）----
 function testDownload(onUpdate) {
     return new Promise(function(resolve) {
-        // Cloudflare测速专用端点，支持CORS，可指定下载字节数
-        var baseUrls = [
-            'https://speed.cloudflare.com/__down?bytes=',
-            'https://cp.cloudflare.com/generate_204',
+        // 国内CDN节点，都有国内加速，延迟低带宽大
+        var sources = [
+            'https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js',
+            'https://cdn.staticfile.org/vue/3.4.21/vue.global.prod.min.js',
+            'https://cdn.bootcdn.net/ajax/libs/moment.js/2.30.1/moment.min.js',
+            'https://cdn.staticfile.org/echarts/5.5.0/echarts.min.js',
+            'https://cdn.bootcdn.net/ajax/libs/lodash.js/4.17.21/lodash.min.js',
+            'https://cdn.staticfile.org/axios/1.7.2/axios.min.js',
+            'https://cdn.bootcdn.net/ajax/libs/three.js/0.165.0/three.min.js'
         ];
-        var downloadSize = 10 * 1024 * 1024; // 10MB per connection
-        var parallel = 4; // 4个并行连接
-        var results = [];
-        var done = 0;
-        var total = parallel;
+        var parallel = 4;      // 并行连接数
+        var duration = 5000;   // 持续下载5秒
+        var totalBytes = 0;    // 累计下载字节
+        var connections = [];  // 存储所有AbortController
+        var startTime = 0;
+        var stopped = false;
+        var progressTimer = null;
 
-        for (var i = 0; i < parallel; i++) {
-            (function(idx) {
-                var url = baseUrls[0] + downloadSize + '&t=' + Date.now() + 'p' + idx;
-                var handshakeDone = false;
-                var transferStart = 0;
-                var start = performance.now();
-                fetch(url, { cache: 'no-store' })
-                    .then(function(resp) {
-                        // 响应头到达=握手完成，从这里开始计时
-                        handshakeDone = true;
-                        transferStart = performance.now();
-                        return resp.blob();
-                    })
-                    .then(function(blob) {
-                        var transferEnd = performance.now();
-                        var transferTime = (transferEnd - transferStart) / 1000;
-                        if (transferTime > 0.05) {
-                            var bps = (blob.size * 8) / transferTime;
-                            results.push(bps);
-                        }
-                        done++;
-                        if (onUpdate) onUpdate(results.length > 0 ? Math.max.apply(null, results) : 0, done, total);
-                        if (done >= total) {
-                            resolve(results.length > 0 ? Math.max.apply(null, results) : 0);
-                        }
-                    })
-                    .catch(function() {
-                        done++;
-                        if (onUpdate) onUpdate(results.length > 0 ? Math.max.apply(null, results) : 0, done, total);
-                        if (done >= total) {
-                            resolve(results.length > 0 ? Math.max.apply(null, results) : 0);
-                        }
-                    });
-            })(i);
+        function stopAll() {
+            if (stopped) return;
+            stopped = true;
+            if (progressTimer) clearInterval(progressTimer);
+            connections.forEach(function(c) { try { c.abort(); } catch(e){} });
+            var elapsed = (performance.now() - startTime) / 1000;
+            var bps = elapsed > 0 ? (totalBytes * 8) / elapsed : 0;
+            resolve(bps);
         }
+
+        // 启动并行下载
+        for (var i = 0; i < parallel; i++) {
+            var srcIdx = i % sources.length;
+            var ctrl = new AbortController();
+            connections.push(ctrl);
+            var url = sources[srcIdx] + '?t=' + Date.now() + 'p' + i;
+            fetch(url, { cache: 'no-store', signal: ctrl.signal })
+                .then(function(resp) {
+                    if (!resp.body) { // 不支持流式读取，回退到blob
+                        return resp.blob().then(function(b) {
+                            totalBytes += b.size;
+                        });
+                    }
+                    var reader = resp.body.getReader();
+                    function readChunk() {
+                        if (stopped) return;
+                        return reader.read().then(function(chunk) {
+                            if (chunk.done) {
+                                // 这个文件读完了，换下一个文件继续
+                                if (!stopped) {
+                                    var nextUrl = sources[Math.floor(Math.random() * sources.length)] + '?t=' + Date.now() + 'r' + Math.random();
+                                    fetch(nextUrl, { cache: 'no-store' })
+                                        .then(function(r2) {
+                                            if (!r2.body) return r2.blob().then(function(b){ totalBytes += b.size; });
+                                            var reader2 = r2.body.getReader();
+                                            function readChunk2() {
+                                                if (stopped) return;
+                                                return reader2.read().then(function(c2) {
+                                                    if (c2.done) return;
+                                                    totalBytes += c2.value.byteLength;
+                                                    return readChunk2();
+                                                });
+                                            }
+                                            return readChunk2();
+                                        })
+                                        .catch(function(){});
+                                }
+                                return;
+                            }
+                            totalBytes += chunk.value.byteLength;
+                            return readChunk();
+                        }).catch(function(){});
+                    }
+                    return readChunk();
+                })
+                .catch(function(){});
+        }
+
+        startTime = performance.now();
+        // 每200ms更新进度
+        progressTimer = setInterval(function() {
+            var elapsed = (performance.now() - startTime) / 1000;
+            if (elapsed >= duration / 1000) {
+                stopAll();
+                return;
+            }
+            if (onUpdate) {
+                var currentBps = elapsed > 0 ? (totalBytes * 8) / elapsed : 0;
+                onUpdate(currentBps, Math.floor(elapsed), duration / 1000);
+            }
+        }, 200);
     });
 }
 
@@ -1325,13 +1368,13 @@ async function runSpeedTest() {
         '<div id="spLive"></div>'
     );
 
-    // 下载（5源×2轮=10样本）
-    var dlBps = await testDownload(function(bps, done, total) {
+    // 下载（国内CDN多源+流式计数+5秒持续）
+    var dlBps = await testDownload(function(bps, elapsed, total) {
         var el = document.getElementById('spLive');
         var st = document.getElementById('spStatus');
         var pg = document.getElementById('spProg');
-        if (st) st.textContent = '正在测试下载速度（' + done + '/' + total + '）...';
-        if (pg) pg.style.width = (5 + done / total * 40) + '%';
+        if (st) st.textContent = '正在测试下载速度（' + elapsed + '/' + total + '秒）...';
+        if (pg) pg.style.width = (5 + elapsed / total * 40) + '%';
         var liveGrade = bps / 1000000 >= 50 ? 'good' : bps / 1000000 >= 10 ? 'ok' : 'bad';
         if (el) el.innerHTML = '<div class="detect-card"><div class="speed-duo"><div class="speed-duo-item"><div class="num ' + liveGrade + '">' + formatSpeed(bps) + '</div><div class="unit">Mbps</div><div class="label">下载速度</div></div><div class="speed-duo-item"><div class="num" style="color:#ccc;">...</div><div class="unit">Mbps</div><div class="label">上传速度</div></div></div></div>';
     });
