@@ -1141,24 +1141,21 @@ function backToDetectHome() {
     document.getElementById('detectBtns').style.display = 'none';
 }
 
-// ---- 下载测速（国内CDN多源+流式Reader+5秒持续+多连接并行）----
+// ---- 下载测速（Cloudflare专用大文件端点+8路并行+12秒流式计数）----
 function testDownload(onUpdate) {
     return new Promise(function(resolve) {
-        // 国内CDN节点，都有国内加速，延迟低带宽大
-        var sources = [
-            'https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js',
-            'https://cdn.staticfile.org/vue/3.4.21/vue.global.prod.min.js',
-            'https://cdn.bootcdn.net/ajax/libs/moment.js/2.30.1/moment.min.js',
-            'https://cdn.staticfile.org/echarts/5.5.0/echarts.min.js',
-            'https://cdn.bootcdn.net/ajax/libs/lodash.js/4.17.21/lodash.min.js',
-            'https://cdn.staticfile.org/axios/1.7.2/axios.min.js',
-            'https://cdn.bootcdn.net/ajax/libs/three.js/0.165.0/three.min.js'
-        ];
-        var parallel = 4;      // 并行连接数
-        var duration = 5000;   // 持续下载5秒
-        var totalBytes = 0;    // 累计下载字节
-        var connections = [];  // 存储所有AbortController
+        // Cloudflare speed test 专用端点，不限速、全球CDN边缘节点、支持CORS跨域
+        var dlSize = 262144000; // 250MB，足够8秒高速下载
+        function cfUrl(connIdx) {
+            return 'https://speed.cloudflare.com/__down?bytes=' + dlSize + '&t=' + Date.now() + 'c' + connIdx + 'r' + Math.random();
+        }
+        var parallel = 8;      // 8路并行连接（最大化利用带宽）
+        var duration = 8000;   // 测量持续8秒
+        var warmup = 2000;     // 前2秒为预热期不计数（TCP握手+TLS+慢启动）
+        var totalBytes = 0;
+        var connections = [];
         var startTime = 0;
+        var measureStart = 0;
         var stopped = false;
         var progressTimer = null;
 
@@ -1167,22 +1164,23 @@ function testDownload(onUpdate) {
             stopped = true;
             if (progressTimer) clearInterval(progressTimer);
             connections.forEach(function(c) { try { c.abort(); } catch(e){} });
-            var elapsed = (performance.now() - startTime) / 1000;
+            var elapsed = (performance.now() - measureStart) / 1000;
             var bps = elapsed > 0 ? (totalBytes * 8) / elapsed : 0;
             resolve(bps);
         }
 
-        // 启动并行下载
-        for (var i = 0; i < parallel; i++) {
-            var srcIdx = i % sources.length;
+        function startConn(i) {
+            if (stopped) return;
             var ctrl = new AbortController();
             connections.push(ctrl);
-            var url = sources[srcIdx] + '?t=' + Date.now() + 'p' + i;
+            var url = cfUrl(i);
             fetch(url, { cache: 'no-store', signal: ctrl.signal })
                 .then(function(resp) {
-                    if (!resp.body) { // 不支持流式读取，回退到blob
+                    if (!resp.body) {
                         return resp.blob().then(function(b) {
-                            totalBytes += b.size;
+                            if (measureStart > 0 && performance.now() >= measureStart) {
+                                totalBytes += b.size;
+                            }
                         });
                     }
                     var reader = resp.body.getReader();
@@ -1190,95 +1188,125 @@ function testDownload(onUpdate) {
                         if (stopped) return;
                         return reader.read().then(function(chunk) {
                             if (chunk.done) {
-                                // 这个文件读完了，换下一个文件继续
-                                if (!stopped) {
-                                    var nextUrl = sources[Math.floor(Math.random() * sources.length)] + '?t=' + Date.now() + 'r' + Math.random();
-                                    fetch(nextUrl, { cache: 'no-store' })
-                                        .then(function(r2) {
-                                            if (!r2.body) return r2.blob().then(function(b){ totalBytes += b.size; });
-                                            var reader2 = r2.body.getReader();
-                                            function readChunk2() {
-                                                if (stopped) return;
-                                                return reader2.read().then(function(c2) {
-                                                    if (c2.done) return;
-                                                    totalBytes += c2.value.byteLength;
-                                                    return readChunk2();
-                                                });
-                                            }
-                                            return readChunk2();
-                                        })
-                                        .catch(function(){});
-                                }
+                                if (!stopped) startConn(i);
                                 return;
                             }
-                            totalBytes += chunk.value.byteLength;
+                            if (measureStart > 0 && performance.now() >= measureStart) {
+                                totalBytes += chunk.value.byteLength;
+                            }
                             return readChunk();
-                        }).catch(function(){});
+                        }).catch(function(){
+                            if (!stopped) startConn(i);
+                        });
                     }
                     return readChunk();
                 })
-                .catch(function(){});
+                .catch(function(){
+                    if (!stopped) {
+                        setTimeout(function(){ if (!stopped) startConn(i); }, 300);
+                    }
+                });
         }
 
         startTime = performance.now();
-        // 每200ms更新进度
+        measureStart = 0;
+
+        // 启动8路并行下载
+        for (var i = 0; i < parallel; i++) {
+            startConn(i);
+        }
+
+        // 预热2秒后开始统计
+        setTimeout(function() {
+            measureStart = performance.now();
+            totalBytes = 0;
+        }, warmup);
+
         progressTimer = setInterval(function() {
             var elapsed = (performance.now() - startTime) / 1000;
-            if (elapsed >= duration / 1000) {
+            if (elapsed >= (warmup + duration) / 1000) {
                 stopAll();
                 return;
             }
             if (onUpdate) {
-                var currentBps = elapsed > 0 ? (totalBytes * 8) / elapsed : 0;
-                onUpdate(currentBps, Math.floor(elapsed), duration / 1000);
+                var measureElapsed = measureStart > 0 ? (performance.now() - measureStart) / 1000 : 0;
+                var currentBps = (measureStart > 0 && measureElapsed > 0)
+                    ? (totalBytes * 8) / measureElapsed
+                    : 0;
+                var totalSec = (warmup + duration) / 1000;
+                onUpdate(currentBps, Math.floor(elapsed), totalSec);
             }
         }, 200);
     });
 }
 
-// ---- 上传测速（8MB大上传×3轮，排除握手时间）----
+// ---- 上传测速（3路并行上传Cloudflare 16MB，聚合带宽）----
 function testUpload(onUpdate) {
     return new Promise(function(resolve) {
-        var rounds = 3;
-        var uploadSize = 8 * 1024 * 1024; // 8MB
+        var parallel = 3;           // 3路并行
+        var uploadSize = 16 * 1024 * 1024; // 16MB per connection
         var results = [];
-        var done = 0;
+        var completed = 0;
+        var stopped = false;
 
-        function doRound(i) {
-            if (i >= rounds) {
-                resolve(results.length > 0 ? Math.max.apply(null, results) : 0);
-                return;
-            }
+        function runOne(idx) {
             var data = new Blob([new Uint8Array(uploadSize)]);
             var start = performance.now();
-            fetch('https://speed.cloudflare.com/__up', { method: 'POST', body: data, cache: 'no-store' })
+            fetch('https://speed.cloudflare.com/__up', {
+                method: 'POST',
+                body: data,
+                cache: 'no-store'
+            })
                 .then(function() {
                     var elapsed = (performance.now() - start) / 1000;
                     var bps = (data.size * 8) / elapsed;
                     results.push(bps);
-                    done++;
-                    if (onUpdate) onUpdate(Math.max.apply(null, results), done, rounds);
-                    doRound(i + 1);
+                    completed++;
+                    if (onUpdate) {
+                        var totalBps = results.reduce(function(a,b){return a+b;}, 0);
+                        onUpdate(totalBps, completed, parallel);
+                    }
+                    if (completed >= parallel && !stopped) {
+                        stopped = true;
+                        // 返回3路并行上传的聚合带宽（总bytes / 最长时间）
+                        resolve(Math.max.apply(null, results));
+                    }
                 })
                 .catch(function() {
-                    // 备用：httpbin
-                    fetch('https://httpbin.org/post', { method: 'POST', body: data, cache: 'no-store' })
+                    // Cloudflare失败，尝试httbin
+                    fetch('https://httpbin.org/post', {
+                        method: 'POST',
+                        body: data,
+                        cache: 'no-store'
+                    })
                         .then(function() {
                             var elapsed = (performance.now() - start) / 1000;
                             var bps = (data.size * 8) / elapsed;
                             results.push(bps);
-                            done++;
-                            if (onUpdate) onUpdate(Math.max.apply(null, results), done, rounds);
-                            doRound(i + 1);
+                            completed++;
+                            if (onUpdate) {
+                                var totalBps = results.reduce(function(a,b){return a+b;}, 0);
+                                onUpdate(totalBps, completed, parallel);
+                            }
+                            if (completed >= parallel && !stopped) {
+                                stopped = true;
+                                resolve(Math.max.apply(null, results));
+                            }
                         })
                         .catch(function() {
-                            done++;
-                            if (onUpdate) onUpdate(results.length > 0 ? Math.max.apply(null, results) : 0, done, rounds);
-                            doRound(i + 1);
+                            completed++;
+                            if (completed >= parallel && !stopped) {
+                                stopped = true;
+                                resolve(results.length > 0 ? Math.max.apply(null, results) : 0);
+                            }
                         });
                 });
         }
-        doRound(0);
+
+        // 同时启动3路上传
+        for (var i = 0; i < parallel; i++) {
+            runOne(i);
+        }
     });
 }
 
@@ -1359,7 +1387,7 @@ function trimmedMean(arr) {
     return trimmed.reduce(function(a, b) { return a + b; }, 0) / trimmed.length;
 }
 
-// ============ 一键测速（下载10样本+上传3轮，显示进度与宽带估算）============
+// ============ 一键测速（下载6路并行8秒+上传3路并行16MB）============
 async function runSpeedTest() {
     showDetectResult(
         '<div class="detect-card"><div class="detect-status">' +
@@ -1368,7 +1396,7 @@ async function runSpeedTest() {
         '<div id="spLive"></div>'
     );
 
-    // 下载（国内CDN多源+流式计数+5秒持续）
+    // 下载（Cloudflare大文件+国内镜像混合 6路并行 8秒流式计数 1.5秒预热）
     var dlBps = await testDownload(function(bps, elapsed, total) {
         var el = document.getElementById('spLive');
         var st = document.getElementById('spStatus');
@@ -1382,7 +1410,7 @@ async function runSpeedTest() {
     var prog = document.getElementById('spProg');
     if (prog) prog.style.width = '50%';
 
-    // 上传（3轮×4MB）
+    // 上传（3路并行×16MB Cloudflare）
     var ulBps = await testUpload(function(bps, done, total) {
         var el = document.getElementById('spLive');
         var st = document.getElementById('spStatus');
