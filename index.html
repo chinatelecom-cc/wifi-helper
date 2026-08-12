@@ -564,8 +564,8 @@ function addDevice(id) {
     // 在户型图中央偏随机位置放置设备
     placedDevices.push({
         id: id,
-        x: 0.35 + Math.random() * 0.3,
-        y: 0.35 + Math.random() * 0.3
+        x: 0.15 + Math.random() * 0.7,
+        y: 0.15 + Math.random() * 0.7
     });
     renderDeviceList();
     drawAll();
@@ -609,7 +609,9 @@ function drawHeatmap(canvasId, devices) {
 
         var cx = pd.x * w;
         var cy = pd.y * h;
-        var radius = dev.range * dpr * Math.min(w, h) / 20;
+        // 半径基于Canvas对角线长度计算，保证信号在长条形户型图上也有合理覆盖
+        var diag = Math.sqrt(w * w + h * h);
+        var radius = dev.range * dpr * diag / 28;
 
         // 径向渐变热力图
         var grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
