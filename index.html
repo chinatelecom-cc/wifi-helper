@@ -806,19 +806,21 @@ function generateOptPlan() {
     var area = parseInt(selectedHouse.acreage);
     var optDevices = [];
 
+    // 优化覆盖率必须高于现有组网，至少提升3%
+    var baseOptCoverage;
     if (area <= 60) {
         optDevices = [
             { id: 'optical', x: 0.15, y: 0.5 },
             { id: 'wifi6',   x: 0.5,  y: 0.5 }
         ];
-        optCoverage = 95;
+        baseOptCoverage = 95;
     } else if (area <= 100) {
         optDevices = [
             { id: 'optical', x: 0.15, y: 0.5 },
             { id: 'wifi6',   x: 0.45, y: 0.35 },
             { id: 'ap',      x: 0.75, y: 0.65 }
         ];
-        optCoverage = 96;
+        baseOptCoverage = 96;
     } else if (area <= 150) {
         optDevices = [
             { id: 'optical', x: 0.1,  y: 0.5 },
@@ -826,7 +828,7 @@ function generateOptPlan() {
             { id: 'ap',      x: 0.65, y: 0.4 },
             { id: 'ap',      x: 0.5,  y: 0.75 }
         ];
-        optCoverage = 97;
+        baseOptCoverage = 97;
     } else {
         optDevices = [
             { id: 'optical', x: 0.1,  y: 0.5 },
@@ -835,8 +837,9 @@ function generateOptPlan() {
             { id: 'ap',      x: 0.7,  y: 0.65 },
             { id: 'ap',      x: 0.35, y: 0.75 }
         ];
-        optCoverage = 98;
+        baseOptCoverage = 98;
     }
+    optCoverage = Math.min(99, Math.max(baseOptCoverage, currentCoverage + 3));
 
     _optDevices = optDevices;
 
@@ -890,7 +893,8 @@ function renderReport() {
     var afterCov = optCoverage || 95;
     document.getElementById('rBeforeCov').textContent = beforeCov + '%';
     document.getElementById('rAfterCov').textContent = afterCov + '%';
-    document.getElementById('rImprove').textContent = '+' + (afterCov - beforeCov) + '%';
+    var improve = afterCov - beforeCov;
+    document.getElementById('rImprove').textContent = (improve >= 0 ? '+' : '') + improve + '%';
 
     // 汇总推荐设备
     var counts = {};
