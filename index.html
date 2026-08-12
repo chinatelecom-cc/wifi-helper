@@ -38,14 +38,8 @@
             transition: all 0.3s;
             white-space: nowrap;
         }
-        .step-item.active {
-            background: #2b7de9;
-            color: #fff;
-        }
-        .step-item.done {
-            background: #e8f4ff;
-            color: #2b7de9;
-        }
+        .step-item.active { background: #2b7de9; color: #fff; }
+        .step-item.done { background: #e8f4ff; color: #2b7de9; }
 
         /* 页面容器 */
         .page { display: none; padding: 16px; }
@@ -61,172 +55,107 @@
             overflow-x: auto;
         }
         .room-tab {
-            flex: 1;
-            min-width: 0;
-            text-align: center;
-            padding: 10px 6px;
-            font-size: 13px;
-            color: #666;
-            border-radius: 8px;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s;
+            flex: 1; min-width: 0;
+            text-align: center; padding: 10px 6px;
+            font-size: 13px; color: #666;
+            border-radius: 8px; cursor: pointer;
+            white-space: nowrap; transition: all 0.2s;
         }
-        .room-tab.active {
-            background: #2b7de9;
-            color: #fff;
-        }
+        .room-tab.active { background: #2b7de9; color: #fff; }
 
         /* 户型卡片网格 */
-        .house-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
+        .house-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
         .house-card {
-            background: #fff;
-            border-radius: 12px;
-            padding: 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: 2px solid transparent;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            background: #fff; border-radius: 12px; padding: 12px;
+            text-align: center; cursor: pointer; transition: all 0.2s;
+            border: 2px solid transparent; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
         }
         .house-card:hover { border-color: #2b7de9; transform: translateY(-1px); }
         .house-card:active { transform: scale(0.97); }
         .house-card.selected { border-color: #2b7de9; background: #f0f7ff; }
-        .house-card svg, .house-card img {
-            width: 80px;
-            height: auto;
-            margin: 0 auto 8px;
-            display: block;
-        }
+        .house-card svg, .house-card img { width: 80px; height: auto; margin: 0 auto 8px; display: block; }
         .house-card .name { font-size: 14px; font-weight: 500; }
         .house-card .area { font-size: 12px; color: #999; margin-top: 2px; }
 
         /* 组网页面 */
-        .network-page {
-            background: #fff;
-            border-radius: 16px;
-            padding: 16px;
-            min-height: 400px;
-        }
+        .network-page { background: #fff; border-radius: 16px; padding: 16px; min-height: 400px; }
         .floorplan-container {
             position: relative;
             background: #fafafa;
             border-radius: 12px;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 300px;
+            overflow: hidden;
             margin-bottom: 16px;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
         .floorplan-container img {
-            max-width: 100%;
-            max-height: 300px;
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        .floorplan-container canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+        }
+        .floorplan-container canvas.interactive {
+            pointer-events: auto;
         }
         .coverage-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 16px;
+            display: flex; align-items: center; gap: 8px;
+            font-size: 14px; color: #666; margin-bottom: 16px;
         }
-        .coverage-bar {
-            flex: 1;
-            height: 8px;
-            background: #eee;
-            border-radius: 4px;
-            overflow: hidden;
-        }
+        .coverage-bar { flex: 1; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
         .coverage-fill {
             height: 100%;
             background: linear-gradient(90deg, #ff6b6b, #ffd93d, #51cf66);
-            border-radius: 4px;
-            transition: width 0.5s;
+            border-radius: 4px; transition: width 0.5s;
         }
 
         /* 设备面板 */
         .device-panel { margin-top: 16px; }
         .device-panel h3 { font-size: 14px; color: #666; margin-bottom: 12px; }
-        .device-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
+        .device-list { display: flex; flex-wrap: wrap; gap: 8px; }
         .device-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 12px;
-            background: #f5f7fa;
-            border-radius: 8px;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 12px; background: #f5f7fa; border-radius: 8px;
+            font-size: 13px; cursor: pointer; transition: all 0.2s;
             border: 1px solid transparent;
         }
         .device-item:hover { border-color: #2b7de9; }
         .device-item.placed { background: #e8f4ff; border-color: #2b7de9; }
         .device-icon {
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center;
             font-size: 16px;
         }
 
-        /* 按钮 */
-        .btn-group {
-            display: flex;
-            gap: 12px;
-            margin-top: 24px;
+        /* 提示文字 */
+        .drag-hint {
+            text-align: center; font-size: 12px; color: #999;
+            margin-top: 8px; font-style: italic;
         }
+
+        /* 按钮 */
+        .btn-group { display: flex; gap: 12px; margin-top: 24px; }
         .btn {
-            flex: 1;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 500;
-            text-align: center;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
+            flex: 1; padding: 14px; border-radius: 12px;
+            font-size: 15px; font-weight: 500; text-align: center;
+            cursor: pointer; border: none; transition: all 0.2s;
         }
         .btn:active { transform: scale(0.97); }
-        .btn-outline {
-            background: #fff;
-            color: #2b7de9;
-            border: 1.5px solid #2b7de9;
-        }
-        .btn-primary {
-            background: #2b7de9;
-            color: #fff;
-        }
+        .btn-outline { background: #fff; color: #2b7de9; border: 1.5px solid #2b7de9; }
+        .btn-primary { background: #2b7de9; color: #fff; }
         .btn-primary:hover { background: #1a6ad8; }
 
         /* 报告页面 */
-        .report-section {
-            background: #fff;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-        }
-        .report-section h3 {
-            font-size: 15px;
-            margin-bottom: 12px;
-            color: #2b7de9;
-        }
+        .report-section { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        .report-section h3 { font-size: 15px; margin-bottom: 12px; color: #2b7de9; }
         .report-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #f0f2f5;
-            font-size: 14px;
+            display: flex; justify-content: space-between;
+            padding: 10px 0; border-bottom: 1px solid #f0f2f5; font-size: 14px;
         }
         .report-item:last-child { border-bottom: none; }
         .report-item .label { color: #666; }
@@ -236,86 +165,52 @@
         .landing-hero {
             position: relative;
             background: linear-gradient(135deg, #1a3a5c 0%, #2b7de9 100%);
-            border-radius: 16px;
-            padding: 40px 24px;
-            text-align: center;
-            color: #fff;
-            margin-bottom: 24px;
-            overflow: hidden;
+            border-radius: 16px; padding: 40px 24px;
+            text-align: center; color: #fff;
+            margin-bottom: 24px; overflow: hidden;
         }
         .landing-hero::before {
-            content: '';
-            position: absolute;
-            top: -30px;
-            right: -30px;
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
+            content: ''; position: absolute; top: -30px; right: -30px;
+            width: 120px; height: 120px; border-radius: 50%;
             background: rgba(255,255,255,0.08);
         }
         .landing-hero::after {
-            content: '';
-            position: absolute;
-            bottom: -40px;
-            left: -20px;
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
+            content: ''; position: absolute; bottom: -40px; left: -20px;
+            width: 100px; height: 100px; border-radius: 50%;
             background: rgba(255,255,255,0.05);
         }
         .landing-hero h1 { font-size: 24px; margin-bottom: 4px; position: relative; z-index: 1; }
         .landing-hero .brand { font-size: 12px; opacity: 0.7; margin-bottom: 20px; position: relative; z-index: 1; }
         .landing-hero .wifi-icon {
-            width: 48px;
-            height: 48px;
-            margin: 0 auto 16px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            position: relative;
-            z-index: 1;
+            width: 48px; height: 48px; margin: 0 auto 16px;
+            background: rgba(255,255,255,0.15); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; position: relative; z-index: 1;
         }
         .enter-btn {
-            display: inline-block;
-            padding: 12px 48px;
-            border: 1px solid rgba(255,255,255,0.5);
-            border-radius: 24px;
-            color: #fff;
-            font-size: 15px;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: rgba(255,255,255,0.1);
-            position: relative;
-            z-index: 1;
+            display: inline-block; padding: 12px 48px;
+            border: 1px solid rgba(255,255,255,0.5); border-radius: 24px;
+            color: #fff; font-size: 15px; cursor: pointer;
+            transition: all 0.2s; background: rgba(255,255,255,0.1);
+            position: relative; z-index: 1;
         }
         .enter-btn:hover { background: rgba(255,255,255,0.2); }
 
         .features {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 24px;
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 12px; margin-bottom: 24px;
         }
         .feature-item {
-            text-align: center;
-            padding: 16px 8px;
-            background: #fff;
-            border-radius: 12px;
+            text-align: center; padding: 16px 8px;
+            background: #fff; border-radius: 12px;
         }
         .feature-item .icon { font-size: 24px; margin-bottom: 6px; }
         .feature-item .text { font-size: 12px; color: #666; }
 
         /* 方案卡片 */
         .plan-card {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            background: #f5f7fa;
-            border-radius: 10px;
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px; background: #f5f7fa; border-radius: 10px;
             margin-bottom: 8px;
         }
         .plan-card .p-icon { font-size: 28px; }
@@ -324,28 +219,15 @@
         .plan-card .p-desc { font-size: 12px; color: #999; margin-top: 2px; }
         .plan-card .p-count { font-size: 14px; color: #2b7de9; font-weight: 500; }
 
-        .cc-brand {
-            text-align: center;
-            padding: 12px;
-            font-size: 11px;
-            color: #999;
-        }
+        .cc-brand { text-align: center; padding: 12px; font-size: 11px; color: #999; }
 
         /* toast */
         .toast {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.75);
-            color: #fff;
-            padding: 10px 24px;
-            border-radius: 20px;
-            font-size: 13px;
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.3s;
-            white-space: nowrap;
+            position: fixed; bottom: 80px; left: 50%;
+            transform: translateX(-50%); background: rgba(0,0,0,0.75);
+            color: #fff; padding: 10px 24px; border-radius: 20px;
+            font-size: 13px; z-index: 1000; opacity: 0;
+            transition: opacity 0.3s; white-space: nowrap;
         }
         .toast.show { opacity: 1; }
     </style>
@@ -397,15 +279,18 @@
             <span id="currentHouseArea" style="font-size:13px;color:#999;margin-left:4px;"></span>
         </div>
         <div class="floorplan-container" id="floorplanContainer">
-            <div id="floorplanSvg"></div>
+            <img id="floorplanImg" src="" alt="户型图" crossorigin="anonymous">
+            <canvas id="heatmapCanvas"></canvas>
+            <canvas id="deviceCanvas" class="interactive"></canvas>
         </div>
+        <div class="drag-hint" id="dragHint" style="display:none;">拖动户型图上的设备图标可调整位置，热力图将实时更新</div>
         <div class="coverage-info">
             <span>整体覆盖率</span>
             <div class="coverage-bar"><div class="coverage-fill" id="coverageFill" style="width:0%"></div></div>
             <span id="coverageText">0%</span>
         </div>
         <div class="device-panel">
-            <h3>点击添加WiFi设备</h3>
+            <h3>点击添加WiFi设备到户型图</h3>
             <div class="device-list" id="deviceList"></div>
         </div>
     </div>
@@ -428,7 +313,9 @@
             <span style="font-size:15px;font-weight:500;">最优组网方案</span>
         </div>
         <div class="floorplan-container" id="optFloorplanContainer">
-            <div id="optFloorplanSvg"></div>
+            <img id="optFloorplanImg" src="" alt="户型图" crossorigin="anonymous">
+            <canvas id="optHeatmapCanvas"></canvas>
+            <canvas id="optDeviceCanvas"></canvas>
         </div>
         <div class="coverage-info">
             <span>优化覆盖率</span>
@@ -529,20 +416,23 @@ const ROOM_TYPES = [
 ];
 
 const DEVICES = [
-    { id: 'wifi5', name: 'WiFi5路由器', icon: '📶', range: 50, price: 0, desc: '现有设备' },
-    { id: 'wifi6', name: 'WiFi6路由器', icon: '📡', range: 80, price: 299, desc: '千兆双频' },
-    { id: 'ap', name: 'AP面板', icon: '🔌', range: 40, price: 199, desc: '86面板式' },
-    { id: 'optical', name: '万兆光猫', icon: '🔲', range: 0, price: 399, desc: '10G PON' },
-    { id: 'ibox', name: '信息箱', icon: '📦', range: 0, price: 150, desc: '弱电箱' }
+    { id: 'wifi5',   name: 'WiFi5路由器', icon: '📶', range: 6,  price: 0,   desc: '现有设备', color: '#ff6b6b' },
+    { id: 'wifi6',   name: 'WiFi6路由器', icon: '📡', range: 10, price: 299, desc: '千兆双频', color: '#2b7de9' },
+    { id: 'ap',      name: 'AP面板',      icon: '🔌', range: 5,  price: 199, desc: '86面板式', color: '#51cf66' },
+    { id: 'optical', name: '万兆光猫',    icon: '🔲', range: 3,  price: 399, desc: '10G PON',  color: '#ffd93d' },
+    { id: 'ibox',    name: '信息箱',      icon: '📦', range: 2,  price: 150, desc: '弱电箱',   color: '#ff922b' }
 ];
 
 // ============ 状态 ============
 let selectedHouse = null;
 let currentType = 1;
-let placedDevices = [];
-let optCoverage = 0;
 let currentCoverage = 0;
+let optCoverage = 0;
 let _optDevices = [];
+
+// 设备放置状态：{ id, x(0~1), y(0~1) } 相对坐标
+let placedDevices = [];
+let dragging = null; // { index, offsetX, offsetY }
 
 // ============ 渲染 ============
 function renderRoomTabs() {
@@ -580,24 +470,18 @@ function selectHouse(id) {
 // ============ 页面导航 ============
 function goToStep(step) {
     if (step === 0) {
-        if (!selectedHouse) {
-            // 默认选第一个
-            selectedHouse = HOUSE_DATA[0];
-        }
+        if (!selectedHouse) selectedHouse = HOUSE_DATA[0];
         document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
         document.getElementById('step1').classList.add('active');
         renderRoomTabs();
         renderHouseGrid();
         return;
     }
-
     if (step === 2 && !selectedHouse) {
         showToast('请先选择一个户型');
         return;
     }
-
     document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-
     if (step === 1) {
         document.getElementById('step1').classList.add('active');
         renderRoomTabs();
@@ -618,56 +502,298 @@ function renderNetworkPage() {
     document.getElementById('currentHouseName').textContent = selectedHouse.label;
     document.getElementById('currentHouseArea').textContent = '(' + selectedHouse.acreage + '㎡)';
 
-    var svgContainer = document.getElementById('floorplanSvg');
-    svgContainer.innerHTML = '<img src="svg/' + selectedHouse.id + '.svg" style="max-width:100%;max-height:300px;">';
+    var img = document.getElementById('floorplanImg');
+    img.src = 'svg/' + selectedHouse.id + '.svg';
+    img.onload = function() {
+        setupCanvasSize('floorplanContainer', 'heatmapCanvas', 'deviceCanvas');
+        drawAll();
+    };
+    // 如果图片已缓存
+    if (img.complete && img.naturalWidth > 0) {
+        setTimeout(function() {
+            setupCanvasSize('floorplanContainer', 'heatmapCanvas', 'deviceCanvas');
+            drawAll();
+        }, 50);
+    }
 
     placedDevices = [];
     currentCoverage = 0;
-    updateCoverage();
+    updateCoverageBar();
     renderDeviceList();
+    document.getElementById('dragHint').style.display = 'none';
 }
 
+function setupCanvasSize(containerId, heatmapId, deviceId) {
+    var container = document.getElementById(containerId);
+    var w = container.offsetWidth;
+    var h = container.offsetHeight;
+    if (w === 0 || h === 0) {
+        setTimeout(function() { setupCanvasSize(containerId, heatmapId, deviceId); }, 100);
+        return;
+    }
+
+    var heatmapCanvas = document.getElementById(heatmapId);
+    var deviceCanvas = document.getElementById(deviceId);
+    var dpr = window.devicePixelRatio || 1;
+
+    heatmapCanvas.width = w * dpr;
+    heatmapCanvas.height = h * dpr;
+    heatmapCanvas.style.width = w + 'px';
+    heatmapCanvas.style.height = h + 'px';
+
+    deviceCanvas.width = w * dpr;
+    deviceCanvas.height = h * dpr;
+    deviceCanvas.style.width = w + 'px';
+    deviceCanvas.style.height = h + 'px';
+}
+
+// ============ 设备列表 ============
 function renderDeviceList() {
     var list = document.getElementById('deviceList');
     list.innerHTML = DEVICES.map(function(d) {
-        var isPlaced = placedDevices.find(function(p) { return p.id === d.id; });
-        return '<div class="device-item' + (isPlaced ? ' placed' : '') + '" onclick="toggleDevice(\'' + d.id + '\')">' +
+        var placed = placedDevices.filter(function(p) { return p.id === d.id; });
+        return '<div class="device-item' + (placed.length > 0 ? ' placed' : '') + '" onclick="addDevice(\'' + d.id + '\')">' +
             '<span class="device-icon">' + d.icon + '</span>' +
             '<span>' + d.name + '</span>' +
+            (placed.length > 0 ? '<span style="color:#2b7de9;margin-left:4px;">x' + placed.length + '</span>' : '') +
             '</div>';
     }).join('');
 }
 
-function toggleDevice(id) {
-    var idx = -1;
-    for (var i = 0; i < placedDevices.length; i++) {
-        if (placedDevices[i].id === id) { idx = i; break; }
-    }
-    if (idx >= 0) {
-        placedDevices.splice(idx, 1);
-    } else {
-        placedDevices.push({ id: id, count: 1 });
-    }
+function addDevice(id) {
+    // 在户型图中央偏随机位置放置设备
+    placedDevices.push({
+        id: id,
+        x: 0.35 + Math.random() * 0.3,
+        y: 0.35 + Math.random() * 0.3
+    });
     renderDeviceList();
-    updateCoverage();
+    drawAll();
+    updateCoverageBar();
+    if (placedDevices.length === 1) {
+        document.getElementById('dragHint').style.display = 'block';
+    }
+    var dev = DEVICES.find(function(d) { return d.id === id; });
+    showToast('已添加 ' + dev.name + '，可拖动调整位置');
 }
 
-function updateCoverage() {
-    var cov = 0;
+function removeDevice(index) {
+    placedDevices.splice(index, 1);
+    renderDeviceList();
+    drawAll();
+    updateCoverageBar();
     if (placedDevices.length === 0) {
-        cov = 0;
-    } else {
-        var area = parseInt(selectedHouse.acreage);
-        var totalRange = 0;
-        placedDevices.forEach(function(pd) {
-            var dev = DEVICES.find(function(d) { return d.id === pd.id; });
-            totalRange += dev.range;
-        });
-        cov = Math.min(98, Math.round((totalRange / area) * 60 + Math.random() * 10 + 10));
+        document.getElementById('dragHint').style.display = 'none';
     }
+}
+
+// ============ 绘制 ============
+function drawAll() {
+    drawHeatmap('heatmapCanvas', placedDevices);
+    drawDevices('deviceCanvas', placedDevices);
+}
+
+function drawHeatmap(canvasId, devices) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas || canvas.width === 0) return;
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width;
+    var h = canvas.height;
+    var dpr = window.devicePixelRatio || 1;
+
+    ctx.clearRect(0, 0, w, h);
+
+    devices.forEach(function(pd) {
+        var dev = DEVICES.find(function(d) { return d.id === pd.id; });
+        if (!dev || dev.range <= 0) return;
+
+        var cx = pd.x * w;
+        var cy = pd.y * h;
+        var radius = dev.range * dpr * Math.min(w, h) / 20;
+
+        // 径向渐变热力图
+        var grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+        // 使用设备颜色，从中心到边缘透明
+        var baseColor = dev.color || '#2b7de9';
+        grad.addColorStop(0, baseColor + '40');  // 中心 25% 不透明
+        grad.addColorStop(0.3, baseColor + '28'); // 15%
+        grad.addColorStop(0.6, baseColor + '18'); // 10%
+        grad.addColorStop(1, baseColor + '00');    // 全透明
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+    });
+}
+
+function drawDevices(canvasId, devices) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas || canvas.width === 0) return;
+    var ctx = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    devices.forEach(function(pd, idx) {
+        var dev = DEVICES.find(function(d) { return d.id === pd.id; });
+        if (!dev) return;
+
+        var cx = pd.x * canvas.width;
+        var cy = pd.y * canvas.height;
+        var r = 18 * dpr;
+
+        // 外圈阴影
+        ctx.beginPath();
+        ctx.arc(cx, cy, r + 2 * dpr, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.15)';
+        ctx.fill();
+
+        // 设备底圈
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = dev.color || '#2b7de9';
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2 * dpr;
+        ctx.stroke();
+
+        // 设备图标（emoji）
+        ctx.fillStyle = '#fff';
+        ctx.font = (14 * dpr) + 'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(dev.icon, cx, cy);
+
+        // 序号标签
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold ' + (8 * dpr) + 'px sans-serif';
+        ctx.fillText(String(idx + 1), cx, cy + r + 6 * dpr);
+    });
+}
+
+// ============ 覆盖率计算 ============
+function updateCoverageBar() {
+    var cov = calcCoverage(placedDevices);
     currentCoverage = cov;
     document.getElementById('coverageFill').style.width = cov + '%';
     document.getElementById('coverageText').textContent = cov + '%';
+}
+
+function calcCoverage(devices) {
+    if (!devices || devices.length === 0) return 0;
+    var area = parseInt(selectedHouse.acreage);
+    var totalRange = 0;
+    devices.forEach(function(pd) {
+        var dev = DEVICES.find(function(d) { return d.id === pd.id; });
+        if (dev) totalRange += dev.range;
+    });
+    // 根据面积和设备范围计算覆盖率
+    var cov = Math.min(98, Math.round((totalRange * totalRange) / area * 30 + devices.length * 5 + 10));
+    return cov;
+}
+
+// ============ 拖动交互 ============
+function initDrag() {
+    var canvas = document.getElementById('deviceCanvas');
+    if (!canvas) return;
+
+    // 查找点击到的设备
+    function findDevice(x, y) {
+        var dpr = window.devicePixelRatio || 1;
+        for (var i = placedDevices.length - 1; i >= 0; i--) {
+            var pd = placedDevices[i];
+            var dx = (x * dpr) - (pd.x * canvas.width);
+            var dy = (y * dpr) - (pd.y * canvas.height);
+            if (Math.sqrt(dx * dx + dy * dy) < 25 * dpr) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    function getPos(e) {
+        var rect = canvas.getBoundingClientRect();
+        var clientX, clientY;
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    // 长按删除定时器
+    var longPressTimer = null;
+    var longPressIndex = -1;
+
+    function startDrag(e) {
+        e.preventDefault();
+        var pos = getPos(e);
+        var idx = findDevice(pos.x, pos.y);
+        if (idx < 0) return;
+
+        longPressIndex = idx;
+        longPressTimer = setTimeout(function() {
+            // 长按 800ms 删除设备
+            if (longPressIndex >= 0 && longPressIndex < placedDevices.length) {
+                var dev = DEVICES.find(function(d) { return d.id === placedDevices[longPressIndex].id; });
+                removeDevice(longPressIndex);
+                showToast('已移除 ' + (dev ? dev.name : '设备'));
+            }
+            longPressIndex = -1;
+            dragging = null;
+        }, 800);
+
+        var pd = placedDevices[idx];
+        var dpr = window.devicePixelRatio || 1;
+        dragging = {
+            index: idx,
+            offsetX: pos.x * dpr - pd.x * canvas.width,
+            offsetY: pos.y * dpr - pd.y * canvas.height
+        };
+    }
+
+    function moveDrag(e) {
+        if (!dragging) return;
+        e.preventDefault();
+        clearTimeout(longPressTimer);
+        longPressIndex = -1;
+
+        var pos = getPos(e);
+        var dpr = window.devicePixelRatio || 1;
+        var newX = (pos.x * dpr - dragging.offsetX) / canvas.width;
+        var newY = (pos.y * dpr - dragging.offsetY) / canvas.height;
+
+        // 限制在0.05~0.95范围内
+        placedDevices[dragging.index].x = Math.max(0.05, Math.min(0.95, newX));
+        placedDevices[dragging.index].y = Math.max(0.05, Math.min(0.95, newY));
+
+        drawAll();
+        updateCoverageBar();
+    }
+
+    function endDrag(e) {
+        clearTimeout(longPressTimer);
+        longPressIndex = -1;
+        if (dragging) {
+            dragging = null;
+        }
+    }
+
+    // 鼠标事件
+    canvas.addEventListener('mousedown', startDrag);
+    canvas.addEventListener('mousemove', moveDrag);
+    canvas.addEventListener('mouseup', endDrag);
+    canvas.addEventListener('mouseleave', endDrag);
+
+    // 触摸事件
+    canvas.addEventListener('touchstart', startDrag, { passive: false });
+    canvas.addEventListener('touchmove', moveDrag, { passive: false });
+    canvas.addEventListener('touchend', endDrag);
+    canvas.addEventListener('touchcancel', endDrag);
 }
 
 // ============ 优化方案 ============
@@ -679,37 +805,73 @@ function generateOptPlan() {
 
     var area = parseInt(selectedHouse.acreage);
     var optDevices = [];
-    var optCov = 0;
 
     if (area <= 60) {
-        optDevices = [{ id: 'optical', count: 1 }, { id: 'wifi6', count: 1 }];
-        optCov = 95;
+        optDevices = [
+            { id: 'optical', x: 0.15, y: 0.5 },
+            { id: 'wifi6',   x: 0.5,  y: 0.5 }
+        ];
+        optCoverage = 95;
     } else if (area <= 100) {
-        optDevices = [{ id: 'optical', count: 1 }, { id: 'wifi6', count: 1 }, { id: 'ap', count: 1 }];
-        optCov = 96;
+        optDevices = [
+            { id: 'optical', x: 0.15, y: 0.5 },
+            { id: 'wifi6',   x: 0.45, y: 0.35 },
+            { id: 'ap',      x: 0.75, y: 0.65 }
+        ];
+        optCoverage = 96;
     } else if (area <= 150) {
-        optDevices = [{ id: 'optical', count: 1 }, { id: 'wifi6', count: 1 }, { id: 'ap', count: 2 }];
-        optCov = 97;
+        optDevices = [
+            { id: 'optical', x: 0.1,  y: 0.5 },
+            { id: 'wifi6',   x: 0.35, y: 0.3 },
+            { id: 'ap',      x: 0.65, y: 0.4 },
+            { id: 'ap',      x: 0.5,  y: 0.75 }
+        ];
+        optCoverage = 97;
     } else {
-        optDevices = [{ id: 'optical', count: 1 }, { id: 'wifi6', count: 1 }, { id: 'ap', count: 3 }];
-        optCov = 98;
+        optDevices = [
+            { id: 'optical', x: 0.1,  y: 0.5 },
+            { id: 'wifi6',   x: 0.3,  y: 0.3 },
+            { id: 'ap',      x: 0.55, y: 0.35 },
+            { id: 'ap',      x: 0.7,  y: 0.65 },
+            { id: 'ap',      x: 0.35, y: 0.75 }
+        ];
+        optCoverage = 98;
     }
 
-    optCoverage = optCov;
     _optDevices = optDevices;
 
-    document.getElementById('optFloorplanSvg').innerHTML = '<img src="svg/' + selectedHouse.id + '.svg" style="max-width:100%;max-height:300px;">';
-    document.getElementById('optCoverageFill').style.width = optCov + '%';
-    document.getElementById('optCoverageText').textContent = optCov + '%';
+    // 设置优化组网页面
+    var img = document.getElementById('optFloorplanImg');
+    img.src = 'svg/' + selectedHouse.id + '.svg';
+    img.onload = function() {
+        setupCanvasSize('optFloorplanContainer', 'optHeatmapCanvas', 'optDeviceCanvas');
+        drawHeatmap('optHeatmapCanvas', optDevices);
+        drawDevices('optDeviceCanvas', optDevices);
+    };
+    if (img.complete && img.naturalWidth > 0) {
+        setTimeout(function() {
+            setupCanvasSize('optFloorplanContainer', 'optHeatmapCanvas', 'optDeviceCanvas');
+            drawHeatmap('optHeatmapCanvas', optDevices);
+            drawDevices('optDeviceCanvas', optDevices);
+        }, 50);
+    }
 
+    document.getElementById('optCoverageFill').style.width = optCoverage + '%';
+    document.getElementById('optCoverageText').textContent = optCoverage + '%';
+
+    // 渲染推荐设备列表
+    var counts = {};
+    optDevices.forEach(function(od) {
+        counts[od.id] = (counts[od.id] || 0) + 1;
+    });
     var optList = document.getElementById('optDeviceList');
     optList.innerHTML = '<h3 style="font-size:14px;color:#666;margin-bottom:12px;">推荐设备方案</h3>' +
-        optDevices.map(function(od) {
-            var dev = DEVICES.find(function(d) { return d.id === od.id; });
+        Object.keys(counts).map(function(did) {
+            var dev = DEVICES.find(function(d) { return d.id === did; });
             return '<div class="plan-card">' +
                 '<span class="p-icon">' + dev.icon + '</span>' +
                 '<div class="p-info"><div class="p-name">' + dev.name + '</div><div class="p-desc">' + dev.desc + '</div></div>' +
-                '<div class="p-count">x' + od.count + '</div>' +
+                '<div class="p-count">x' + counts[did] + '</div>' +
                 '</div>';
         }).join('');
 
@@ -730,24 +892,31 @@ function renderReport() {
     document.getElementById('rAfterCov').textContent = afterCov + '%';
     document.getElementById('rImprove').textContent = '+' + (afterCov - beforeCov) + '%';
 
+    // 汇总推荐设备
+    var counts = {};
+    _optDevices.forEach(function(od) {
+        counts[od.id] = (counts[od.id] || 0) + 1;
+    });
+
     var planList = document.getElementById('rPlanList');
-    planList.innerHTML = _optDevices.map(function(od) {
-        var dev = DEVICES.find(function(d) { return d.id === od.id; });
+    planList.innerHTML = Object.keys(counts).map(function(did) {
+        var dev = DEVICES.find(function(d) { return d.id === did; });
         return '<div class="plan-card">' +
             '<span class="p-icon">' + dev.icon + '</span>' +
             '<div class="p-info"><div class="p-name">' + dev.name + '</div><div class="p-desc">' + dev.desc + '</div></div>' +
-            '<div class="p-count">x' + od.count + '</div>' +
+            '<div class="p-count">x' + counts[did] + '</div>' +
             '</div>';
     }).join('');
 
     var costList = document.getElementById('rCostList');
     var totalCost = 0;
-    costList.innerHTML = _optDevices.map(function(od) {
-        var dev = DEVICES.find(function(d) { return d.id === od.id; });
-        var cost = dev.price * od.count;
+    costList.innerHTML = Object.keys(counts).map(function(did) {
+        var dev = DEVICES.find(function(d) { return d.id === did; });
+        var cnt = counts[did];
+        var cost = dev.price * cnt;
         totalCost += cost;
         return '<div class="report-item">' +
-            '<span class="label">' + dev.name + ' x' + od.count + '</span>' +
+            '<span class="label">' + dev.name + ' x' + cnt + '</span>' +
             '<span class="value">' + (cost > 0 ? '¥' + cost : '现有设备') + '</span>' +
             '</div>';
     }).join('');
@@ -773,6 +942,20 @@ function shareReport() {
 // ============ 初始化 ============
 renderRoomTabs();
 renderHouseGrid();
+initDrag();
+
+// 窗口大小变化时重绘
+window.addEventListener('resize', function() {
+    if (document.getElementById('step2').classList.contains('active')) {
+        setupCanvasSize('floorplanContainer', 'heatmapCanvas', 'deviceCanvas');
+        drawAll();
+    }
+    if (document.getElementById('step3').classList.contains('active')) {
+        setupCanvasSize('optFloorplanContainer', 'optHeatmapCanvas', 'optDeviceCanvas');
+        drawHeatmap('optHeatmapCanvas', _optDevices);
+        drawDevices('optDeviceCanvas', _optDevices);
+    }
+});
 </script>
 </body>
 </html>
