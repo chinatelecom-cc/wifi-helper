@@ -449,13 +449,15 @@
         <div class="floorplan-container" id="optFloorplanContainer">
             <img id="optFloorplanImg" src="" alt="户型图" crossorigin="anonymous">
             <canvas id="optHeatmapCanvas"></canvas>
-            <canvas id="optDeviceCanvas"></canvas>
+            <canvas id="optDeviceCanvas" class="interactive"></canvas>
         </div>
+        <div class="drag-hint" id="optDragHint">拖动设备图标可调整位置，点击右上角X可移除设备</div>
         <div class="coverage-info">
             <span>优化覆盖率</span>
             <div class="coverage-bar"><div class="coverage-fill" id="optCoverageFill" style="width:0%"></div></div>
             <span id="optCoverageText">0%</span>
         </div>
+        <div id="optExistingDevices"></div>
         <div id="optDeviceList"></div>
     </div>
     <div class="btn-group">
@@ -747,14 +749,14 @@ function drawHeatmap(canvasId, devices) {
         var diag = Math.sqrt(w * w + h * h);
         var radius = dev.range * dpr * diag / 38;
 
-        // 径向渐变热力图
+        // 径向渐变热力图：红（弱）→橙→黄→绿（强）
         var grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-        // 使用设备颜色，从中心到边缘透明
-        var baseColor = dev.color || '#2b7de9';
-        grad.addColorStop(0, baseColor + '40');  // 中心 25% 不透明
-        grad.addColorStop(0.3, baseColor + '28'); // 15%
-        grad.addColorStop(0.6, baseColor + '18'); // 10%
-        grad.addColorStop(1, baseColor + '00');    // 全透明
+        grad.addColorStop(0,    'rgba(82, 196, 26, 0.45)');  // 中心：绿色（信号强）
+        grad.addColorStop(0.25, 'rgba(148, 204, 28, 0.38)'); // 黄绿
+        grad.addColorStop(0.45, 'rgba(255, 214, 10, 0.32)'); // 黄色
+        grad.addColorStop(0.65, 'rgba(255, 154, 0, 0.25)');  // 橙色
+        grad.addColorStop(0.85, 'rgba(255, 80, 40, 0.18)');  // 红橙
+        grad.addColorStop(1,    'rgba(255, 50, 50, 0)');      // 边缘：红色全透明
 
         ctx.beginPath();
         ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -763,11 +765,12 @@ function drawHeatmap(canvasId, devices) {
     });
 }
 
-function drawDevices(canvasId, devices) {
+function drawDevices(canvasId, devices, opts) {
     var canvas = document.getElementById(canvasId);
     if (!canvas || canvas.width === 0) return;
     var ctx = canvas.getContext('2d');
     var dpr = window.devicePixelRatio || 1;
+    var showRemove = opts && opts.showRemove;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -805,6 +808,34 @@ function drawDevices(canvasId, devices) {
         ctx.fillStyle = '#fff';
         ctx.font = 'bold ' + (8 * dpr) + 'px sans-serif';
         ctx.fillText(String(idx + 1), cx, cy + r + 6 * dpr);
+
+        // 右上角X移除按钮
+        if (showRemove) {
+            var bx = cx + r * 0.72;
+            var by = cy - r * 0.72;
+            var br = 7 * dpr;
+
+            // X按钮背景
+            ctx.beginPath();
+            ctx.arc(bx, by, br, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff4444';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1.5 * dpr;
+            ctx.stroke();
+
+            // X叉号
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1.8 * dpr;
+            ctx.lineCap = 'round';
+            var xs = br * 0.5;
+            ctx.beginPath();
+            ctx.moveTo(bx - xs, by - xs);
+            ctx.lineTo(bx + xs, by + xs);
+            ctx.moveTo(bx + xs, by - xs);
+            ctx.lineTo(bx - xs, by + xs);
+            ctx.stroke();
+        }
     });
 }
 
@@ -952,6 +983,131 @@ function initDrag() {
 }
 
 // ============ 优化方案 ============
+function drawOptAll() {
+    drawHeatmap('optHeatmapCanvas', _optDevices);
+    drawDevices('optDeviceCanvas', _optDevices, { showRemove: true });
+}
+
+function initOptDrag() {
+    var canvas = document.getElementById('optDeviceCanvas');
+    if (!canvas) return;
+
+    // 移除旧事件监听器（通过克隆节点）
+    var newCanvas = canvas.cloneNode(true);
+    canvas.parentNode.replaceChild(newCanvas, canvas);
+    canvas = newCanvas;
+    // 恢复class
+    canvas.className = 'interactive';
+
+    var isDragging = false;
+    var dragIdx = -1;
+    var didMove = false;
+
+    function findDevice(x, y) {
+        var dpr = window.devicePixelRatio || 1;
+        for (var i = _optDevices.length - 1; i >= 0; i--) {
+            var pd = _optDevices[i];
+            var dx = (x * dpr) - (pd.x * canvas.width);
+            var dy = (y * dpr) - (pd.y * canvas.height);
+            if (Math.sqrt(dx * dx + dy * dy) < 25 * dpr) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    function findRemoveButton(x, y) {
+        var dpr = window.devicePixelRatio || 1;
+        for (var i = _optDevices.length - 1; i >= 0; i--) {
+            var pd = _optDevices[i];
+            var cx = pd.x * canvas.width;
+            var cy = pd.y * canvas.height;
+            var r = 18 * dpr;
+            var bx = cx + r * 0.72;
+            var by = cy - r * 0.72;
+            var br = 9 * dpr; // 稍大一点方便点击
+            var dx = (x * dpr) - bx;
+            var dy = (y * dpr) - by;
+            if (Math.sqrt(dx * dx + dy * dy) < br) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    function getPos(e) {
+        var rect = canvas.getBoundingClientRect();
+        var clientX, clientY;
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function startDrag(e) {
+        e.preventDefault();
+        var pos = getPos(e);
+
+        // 优先检查是否点到了X按钮
+        var rmIdx = findRemoveButton(pos.x, pos.y);
+        if (rmIdx >= 0) {
+            var dev = DEVICES.find(function(d) { return d.id === _optDevices[rmIdx].id; });
+            _optDevices.splice(rmIdx, 1);
+            drawOptAll();
+            showToast('已移除 ' + (dev ? dev.name : '设备'));
+            return;
+        }
+
+        var idx = findDevice(pos.x, pos.y);
+        if (idx < 0) return;
+
+        isDragging = true;
+        dragIdx = idx;
+        didMove = false;
+
+        var pd = _optDevices[idx];
+        var dpr = window.devicePixelRatio || 1;
+        canvas._dragOffset = {
+            x: pos.x * dpr - pd.x * canvas.width,
+            y: pos.y * dpr - pd.y * canvas.height
+        };
+    }
+
+    function moveDrag(e) {
+        if (!isDragging || dragIdx < 0) return;
+        e.preventDefault();
+        didMove = true;
+
+        var pos = getPos(e);
+        var dpr = window.devicePixelRatio || 1;
+        var newX = (pos.x * dpr - canvas._dragOffset.x) / canvas.width;
+        var newY = (pos.y * dpr - canvas._dragOffset.y) / canvas.height;
+
+        _optDevices[dragIdx].x = Math.max(0.05, Math.min(0.95, newX));
+        _optDevices[dragIdx].y = Math.max(0.05, Math.min(0.95, newY));
+
+        drawOptAll();
+    }
+
+    function endDrag(e) {
+        isDragging = false;
+        dragIdx = -1;
+    }
+
+    canvas.addEventListener('mousedown', startDrag);
+    canvas.addEventListener('mousemove', moveDrag);
+    canvas.addEventListener('mouseup', endDrag);
+    canvas.addEventListener('mouseleave', endDrag);
+    canvas.addEventListener('touchstart', startDrag, { passive: false });
+    canvas.addEventListener('touchmove', moveDrag, { passive: false });
+    canvas.addEventListener('touchend', endDrag);
+    canvas.addEventListener('touchcancel', endDrag);
+}
+
 function generateOptPlan() {
     if (placedDevices.length === 0) {
         showToast('请先添加现有WiFi设备');
@@ -998,19 +1154,36 @@ function generateOptPlan() {
 
     _optDevices = optDevices;
 
+    // 渲染现有组网设备列表
+    var existingHTML = '<h3 style="font-size:14px;color:#666;margin-bottom:10px;">现有组网设备</h3>';
+    if (placedDevices.length > 0) {
+        var existingCounts = {};
+        placedDevices.forEach(function(pd) {
+            existingCounts[pd.id] = (existingCounts[pd.id] || 0) + 1;
+        });
+        existingHTML += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">' +
+            Object.keys(existingCounts).map(function(did) {
+                var dev = DEVICES.find(function(d) { return d.id === did; });
+                return '<div class="plan-card" style="opacity:0.7;">' +
+                    '<span class="p-icon">' + dev.icon + '</span>' +
+                    '<div class="p-info"><div class="p-name">' + dev.name + '</div><div class="p-desc">现有设备</div></div>' +
+                    '<div class="p-count">x' + existingCounts[did] + '</div>' +
+                    '</div>';
+            }).join('') + '</div>';
+    }
+    document.getElementById('optExistingDevices').innerHTML = existingHTML;
+
     // 设置优化组网页面
     var img = document.getElementById('optFloorplanImg');
     img.src = 'svg/' + selectedHouse.id + '.svg';
     img.onload = function() {
         setupCanvasSize('optFloorplanContainer', 'optHeatmapCanvas', 'optDeviceCanvas');
-        drawHeatmap('optHeatmapCanvas', optDevices);
-        drawDevices('optDeviceCanvas', optDevices);
+        drawOptAll();
     };
     if (img.complete && img.naturalWidth > 0) {
         setTimeout(function() {
             setupCanvasSize('optFloorplanContainer', 'optHeatmapCanvas', 'optDeviceCanvas');
-            drawHeatmap('optHeatmapCanvas', optDevices);
-            drawDevices('optDeviceCanvas', optDevices);
+            drawOptAll();
         }, 50);
     }
 
@@ -1023,7 +1196,7 @@ function generateOptPlan() {
         counts[od.id] = (counts[od.id] || 0) + 1;
     });
     var optList = document.getElementById('optDeviceList');
-    optList.innerHTML = '<h3 style="font-size:14px;color:#666;margin-bottom:12px;">推荐设备方案</h3>' +
+    optList.innerHTML = '<h3 style="font-size:14px;color:#666;margin-bottom:12px;">推荐新增设备</h3>' +
         Object.keys(counts).map(function(did) {
             var dev = DEVICES.find(function(d) { return d.id === did; });
             return '<div class="plan-card">' +
@@ -1033,8 +1206,11 @@ function generateOptPlan() {
                 '</div>';
         }).join('');
 
+    // 初始化优化组网拖拽
+    initOptDrag();
+
     goToStep(3);
-    showToast('最优方案已生成');
+    showToast('最优方案已生成，可拖动调整设备位置');
 }
 
 // ============ 报告 ============
@@ -1111,8 +1287,7 @@ window.addEventListener('resize', function() {
     }
     if (document.getElementById('step3').classList.contains('active')) {
         setupCanvasSize('optFloorplanContainer', 'optHeatmapCanvas', 'optDeviceCanvas');
-        drawHeatmap('optHeatmapCanvas', _optDevices);
-        drawDevices('optDeviceCanvas', _optDevices);
+        drawOptAll();
     }
 });
 // ============ 网络检测模块 ============
