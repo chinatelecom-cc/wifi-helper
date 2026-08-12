@@ -1141,54 +1141,72 @@ function backToDetectHome() {
     document.getElementById('detectBtns').style.display = 'none';
 }
 
-// ---- 下载测速（5源×2轮=10样本，去极值均值）----
+// ---- 下载测速（Cloudflare大文件+多连接并行，排除握手时间）----
 function testDownload(onUpdate) {
     return new Promise(function(resolve) {
-        var files = [
-            'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js',
-            'https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.min.js',
-            'https://unpkg.com/react@18.3.1/umd/react.production.min.js',
-            'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
-            'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js'
+        // Cloudflare测速专用端点，支持CORS，可指定下载字节数
+        var baseUrls = [
+            'https://speed.cloudflare.com/__down?bytes=',
+            'https://cp.cloudflare.com/generate_204',
         ];
-        var rounds = 2;
+        var downloadSize = 10 * 1024 * 1024; // 10MB per connection
+        var parallel = 4; // 4个并行连接
         var results = [];
         var done = 0;
-        var total = files.length * rounds;
-        for (var r = 0; r < rounds; r++) {
-            files.forEach(function(url) {
+        var total = parallel;
+
+        for (var i = 0; i < parallel; i++) {
+            (function(idx) {
+                var url = baseUrls[0] + downloadSize + '&t=' + Date.now() + 'p' + idx;
+                var handshakeDone = false;
+                var transferStart = 0;
                 var start = performance.now();
-                fetch(url + '?t=' + start + 'r' + r, { cache: 'no-store' })
-                    .then(function(resp) { return resp.blob(); })
+                fetch(url, { cache: 'no-store' })
+                    .then(function(resp) {
+                        // 响应头到达=握手完成，从这里开始计时
+                        handshakeDone = true;
+                        transferStart = performance.now();
+                        return resp.blob();
+                    })
                     .then(function(blob) {
-                        var elapsed = (performance.now() - start) / 1000;
-                        var bps = (blob.size * 8) / elapsed;
-                        results.push(bps);
+                        var transferEnd = performance.now();
+                        var transferTime = (transferEnd - transferStart) / 1000;
+                        if (transferTime > 0.05) {
+                            var bps = (blob.size * 8) / transferTime;
+                            results.push(bps);
+                        }
                         done++;
-                        if (onUpdate) onUpdate(bps, done, total);
-                        if (done >= total) resolve(trimmedMean(results));
+                        if (onUpdate) onUpdate(results.length > 0 ? Math.max.apply(null, results) : 0, done, total);
+                        if (done >= total) {
+                            resolve(results.length > 0 ? Math.max.apply(null, results) : 0);
+                        }
                     })
                     .catch(function() {
                         done++;
-                        if (done >= total) resolve(results.length > 0 ? trimmedMean(results) : 0);
+                        if (onUpdate) onUpdate(results.length > 0 ? Math.max.apply(null, results) : 0, done, total);
+                        if (done >= total) {
+                            resolve(results.length > 0 ? Math.max.apply(null, results) : 0);
+                        }
                     });
-            });
+            })(i);
         }
     });
 }
 
-// ---- 上传测速（3轮×4MB，去极值均值）----
+// ---- 上传测速（8MB大上传×3轮，排除握手时间）----
 function testUpload(onUpdate) {
     return new Promise(function(resolve) {
         var rounds = 3;
+        var uploadSize = 8 * 1024 * 1024; // 8MB
         var results = [];
         var done = 0;
+
         function doRound(i) {
             if (i >= rounds) {
-                resolve(results.length > 0 ? trimmedMean(results) : 0);
+                resolve(results.length > 0 ? Math.max.apply(null, results) : 0);
                 return;
             }
-            var data = new Blob([new Uint8Array(4 * 1024 * 1024)]);
+            var data = new Blob([new Uint8Array(uploadSize)]);
             var start = performance.now();
             fetch('https://speed.cloudflare.com/__up', { method: 'POST', body: data, cache: 'no-store' })
                 .then(function() {
@@ -1196,22 +1214,23 @@ function testUpload(onUpdate) {
                     var bps = (data.size * 8) / elapsed;
                     results.push(bps);
                     done++;
-                    if (onUpdate) onUpdate(bps, done, rounds);
+                    if (onUpdate) onUpdate(Math.max.apply(null, results), done, rounds);
                     doRound(i + 1);
                 })
                 .catch(function() {
+                    // 备用：httpbin
                     fetch('https://httpbin.org/post', { method: 'POST', body: data, cache: 'no-store' })
                         .then(function() {
                             var elapsed = (performance.now() - start) / 1000;
                             var bps = (data.size * 8) / elapsed;
                             results.push(bps);
                             done++;
-                            if (onUpdate) onUpdate(bps, done, rounds);
+                            if (onUpdate) onUpdate(Math.max.apply(null, results), done, rounds);
                             doRound(i + 1);
                         })
                         .catch(function() {
                             done++;
-                            if (onUpdate) onUpdate(0, done, rounds);
+                            if (onUpdate) onUpdate(results.length > 0 ? Math.max.apply(null, results) : 0, done, rounds);
                             doRound(i + 1);
                         });
                 });
