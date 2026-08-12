@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="37px" height="119px" viewBox="0 0 37 119" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>编组 8备份</title>
+    <g id="主页面" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="编组-8备份" transform="translate(1.000000, 1.000000)" stroke="#000000" stroke-width="2">
+            <polyline id="路径" points="33.0435753 0 35 0 35 117 0 117 0 0 25.0466995 0"></polyline>
+            <line x1="0.0942622951" y1="75.5" x2="22.9057377" y2="75.5" id="直线" stroke-linecap="square"></line>
+            <line x1="33.0942623" y1="75.5" x2="34.0942623" y2="75.5" id="直线备份" stroke-linecap="square"></line>
+            <line x1="1.0942623" y1="25.5" x2="24.0942623" y2="25.5" id="直线备份-2" stroke-linecap="square"></line>
+            <line x1="33.0942623" y1="25.5" x2="34.0942623" y2="25.5" id="直线备份-3" stroke-linecap="square"></line>
+            <line x1="16" y1="0.107594937" x2="16" y2="14" id="直线-2" stroke-linecap="square"></line>
+            <line x1="16" y1="24.1075949" x2="16" y2="25.1075949" id="直线-2备份" stroke-linecap="square"></line>
+        </g>
+    </g>
+</svg>
