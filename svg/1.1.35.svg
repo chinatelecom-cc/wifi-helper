@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="45px" height="121px" viewBox="0 0 45 121" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>编组 12备份</title>
+    <g id="主页面" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="编组-12备份" transform="translate(1.000000, 1.000000)" stroke="#000000">
+            <line x1="26.3679245" y1="0.817869416" x2="26.3679245" y2="7.36082474" id="直线-5" stroke-width="1.63573883" stroke-linecap="square"></line>
+            <line x1="26.3679245" y1="26.9896907" x2="26.3679245" y2="33.532646" id="直线-5备份" stroke-width="1.63573883" stroke-linecap="square"></line>
+            <polyline id="路径" stroke-width="1.62916251" points="39.7080576 119 0 119 0 0.408934708 2.46915815 0.408934708"></polyline>
+            <line x1="11.8185399" y1="0.408934708" x2="39.4034456" y2="0.408934708" id="路径" stroke-width="1.62916251"></line>
+            <polyline id="路径" stroke-width="1.62916251" points="38.0280601 0.408934708 43 0.408934708 43 119 38.1346144 119"></polyline>
+            <line x1="13.3329722" y1="34.9761912" x2="42.4230935" y2="34.9761912" id="直线-3" stroke-width="1.62916251" stroke-linecap="square"></line>
+            <line x1="0.404029462" y1="34.9761912" x2="2.02014731" y2="34.9761912" id="直线-3备份" stroke-width="1.62916251" stroke-linecap="square"></line>
+            <line x1="0.404029462" y1="65.8833853" x2="2.82820623" y2="65.8833853" id="直线-3备份-2" stroke-width="1.62916251" stroke-linecap="square"></line>
+            <line x1="0.404029462" y1="103.297357" x2="6.06044193" y2="103.297357" id="直线-3备份-4" stroke-width="1.62916251" stroke-linecap="square"></line>
+            <line x1="38.3827989" y1="65.8833853" x2="42.4230935" y2="65.8833853" id="直线-3备份-3" stroke-width="1.62916251" stroke-linecap="square"></line>
+            <line x1="35.9586221" y1="103.297357" x2="41.6150346" y2="103.297357" id="直线-3备份-5" stroke-width="1.62916251" stroke-linecap="square"></line>
+        </g>
+    </g>
+</svg>
