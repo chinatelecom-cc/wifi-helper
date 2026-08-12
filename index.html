@@ -1364,18 +1364,42 @@ async function runWifiDetect() {
     var score = 0;
     var items = [];
 
-    // 1. 网络类型（即时获取）
+    // 1. 连接方式（WiFi/以太网/移动网络）
+    var connType = '未知';
+    var connTypeGrade = 'ok';
+    var typeMap = { 'wifi': 'WiFi', 'ethernet': '以太网', 'cellular': '移动网络', 'wimax': 'WiMAX', 'bluetooth': '蓝牙', 'none': '无网络', 'other': '其他' };
+    if (conn && conn.type && typeMap[conn.type]) {
+        connType = typeMap[conn.type];
+        connTypeGrade = conn.type === 'wifi' || conn.type === 'ethernet' ? 'good' : conn.type === 'cellular' ? 'ok' : 'ok';
+    } else {
+        // 回退判断：桌面端默认WiFi/有线，移动端看effectiveType推断
+        var ua = navigator.userAgent.toLowerCase();
+        var isMobile = /mobile|android|iphone|ipad|ipod|windows phone/i.test(ua);
+        if (!isMobile) {
+            connType = 'WiFi/以太网';
+            connTypeGrade = 'good';
+        } else {
+            connType = 'WiFi/移动网络';
+            connTypeGrade = 'ok';
+        }
+    }
+    items.push({ label: '连接方式', value: connType, grade: connTypeGrade });
+    if (connType.indexOf('WiFi') >= 0 || connType.indexOf('以太网') >= 0) score += 30;
+    else if (connType === '移动网络') score += 15;
+    else score += 20;
+
+    // 2. 网络质量等级（effectiveType: 4g/3g/2g等效）
     if (conn && conn.effectiveType) {
         var et = conn.effectiveType;
+        var etMap = { '4g': '4G等效', '3g': '3G等效', '2g': '2G等效', 'slow-2g': '2G以下' };
+        var etVal = etMap[et] || et.toUpperCase();
         var etGrade = et === '4g' ? 'good' : et === '3g' ? 'ok' : 'bad';
-        items.push({ label: '网络类型', value: et.toUpperCase(), grade: etGrade });
-        if (et === '4g') score += 30; else if (et === '3g') score += 15;
+        items.push({ label: '网络质量等级', value: etVal, grade: etGrade });
     } else {
-        items.push({ label: '网络类型', value: '未知', grade: 'ok' });
-        score += 20;
+        items.push({ label: '网络质量等级', value: '未获取', grade: 'ok' });
     }
 
-    // 2. 估算带宽（即时获取）
+    // 3. 估算带宽（即时获取）
     if (conn && conn.downlink) {
         var dl = conn.downlink;
         var dlG = dl >= 20 ? 'good' : dl >= 5 ? 'ok' : 'bad';
