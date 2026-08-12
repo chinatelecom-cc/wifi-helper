@@ -195,6 +195,12 @@
             position: relative; z-index: 1;
         }
         .enter-btn:hover { background: rgba(255,255,255,0.2); }
+        .enter-btn.detection {
+            margin-top: 12px;
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.3);
+            font-size: 14px;
+        }
 
         .features {
             display: grid; grid-template-columns: repeat(3, 1fr);
@@ -230,6 +236,84 @@
             transition: opacity 0.3s; white-space: nowrap;
         }
         .toast.show { opacity: 1; }
+
+        /* ============ 网络检测模块 ============ */
+        .detect-gauge {
+            width: 200px; height: 100px; margin: 0 auto;
+            position: relative; overflow: hidden;
+        }
+        .detect-gauge svg { width: 100%; height: 100%; }
+        .gauge-value {
+            position: absolute; bottom: 8px; left: 50%;
+            transform: translateX(-50%); text-align: center;
+        }
+        .gauge-value .num { font-size: 32px; font-weight: 700; color: #2b7de9; }
+        .gauge-value .unit { font-size: 12px; color: #999; }
+        .gauge-label { text-align: center; font-size: 13px; color: #999; margin-top: 4px; }
+
+        .detect-card {
+            background: #fff; border-radius: 12px; padding: 16px;
+            margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .detect-card h3 {
+            font-size: 15px; color: #333; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .detect-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 0; border-bottom: 1px solid #f0f2f5; font-size: 14px;
+        }
+        .detect-row:last-child { border-bottom: none; }
+        .detect-row .label { color: #666; }
+        .detect-row .value { font-weight: 600; }
+        .detect-row .value.good { color: #51cf66; }
+        .detect-row .value.ok { color: #ffd93d; }
+        .detect-row .value.bad { color: #ff6b6b; }
+
+        .speed-ring {
+            position: relative; width: 120px; height: 120px; margin: 0 auto 8px;
+        }
+        .speed-ring svg { transform: rotate(-90deg); }
+        .speed-ring .ring-text {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%,-50%); text-align: center;
+        }
+        .speed-ring .ring-text .num { font-size: 24px; font-weight: 700; color: #2b7de9; }
+        .speed-ring .ring-text .unit { font-size: 11px; color: #999; }
+
+        .test-progress {
+            height: 6px; background: #f0f2f5; border-radius: 3px;
+            overflow: hidden; margin-top: 8px;
+        }
+        .test-progress-bar {
+            height: 100%; background: #2b7de9; border-radius: 3px;
+            transition: width 0.3s; width: 0%;
+        }
+
+        .game-tag {
+            display: inline-block; padding: 3px 10px; border-radius: 12px;
+            font-size: 12px; margin: 2px;
+        }
+        .game-tag.green { background: #e8f9e8; color: #51cf66; }
+        .game-tag.yellow { background: #fff8e8; color: #f0a020; }
+        .game-tag.red { background: #fde8e8; color: #ff6b6b; }
+
+        .detect-status {
+            text-align: center; padding: 24px 16px;
+        }
+        .detect-status .icon { font-size: 36px; margin-bottom: 8px; }
+        .detect-status .text { font-size: 14px; color: #666; }
+
+        .video-quality-tag {
+            display: inline-block; padding: 4px 12px; border-radius: 8px;
+            font-size: 13px; font-weight: 500; margin: 2px;
+        }
+        .video-quality-tag.active {
+            background: #2b7de9; color: #fff;
+        }
+        .video-quality-tag.inactive {
+            background: #f0f2f5; color: #ccc;
+        }
     </style>
 </head>
 <body>
@@ -241,6 +325,7 @@
         <h1>全光WiFi服务助手</h1>
         <div class="brand">中国电信 · 长春分公司</div>
         <div class="enter-btn" onclick="goToStep(0)">进入工具</div>
+        <div class="enter-btn detection" onclick="goToDetection()">🔧 网络检测工具</div>
     </div>
     <div class="features">
         <div class="feature-item"><div class="icon">🏠</div><div class="text">标准户型选择</div></div>
@@ -248,6 +333,40 @@
         <div class="feature-item"><div class="icon">📊</div><div class="text">覆盖效果评估</div></div>
     </div>
     <div class="cc-brand">中国电信长春分公司 · 硅谷大街网格</div>
+</div>
+
+<!-- 网络检测页 -->
+<div id="detectionPage" class="page">
+    <div class="step-nav">
+        <div class="step-item active">网络检测</div>
+    </div>
+    <!-- 检测首页 -->
+    <div id="detectHome">
+        <div class="detect-card" style="text-align:center;padding:32px 16px;">
+            <div style="font-size:48px;margin-bottom:12px;">🔧</div>
+            <h3 style="justify-content:center;">网络诊断工具</h3>
+            <p style="font-size:13px;color:#999;margin-bottom:20px;">一键检测下载/上传速度、延迟、WiFi信号、视频和游戏体验</p>
+            <div class="btn btn-primary" style="max-width:200px;margin:0 auto;" onclick="startDetection()">开始检测</div>
+        </div>
+    </div>
+    <!-- 检测中 -->
+    <div id="detectRunning" style="display:none;">
+        <div class="detect-card">
+            <div class="detect-status" id="detectStatus">
+                <div class="icon" id="detectIcon">⏳</div>
+                <div class="text" id="detectStatusText">准备中...</div>
+            </div>
+            <div class="test-progress"><div class="test-progress-bar" id="detectProgressBar"></div></div>
+        </div>
+        <!-- 实时结果 -->
+        <div id="detectLiveResults"></div>
+    </div>
+    <!-- 检测报告 -->
+    <div id="detectReport" style="display:none;"></div>
+    <div class="btn-group" id="detectBtns" style="display:none;">
+        <div class="btn btn-outline" onclick="goToDetection(true)">重新检测</div>
+        <div class="btn btn-primary" onclick="backToHome()">返回首页</div>
+    </div>
 </div>
 
 <!-- 步骤1: 户型选择 -->
@@ -981,6 +1100,427 @@ window.addEventListener('resize', function() {
         drawDevices('optDeviceCanvas', _optDevices);
     }
 });
+// ============ 网络检测模块 ============
+var detectResults = {
+    download: 0, upload: 0, ping: 0, jitter: 0, loss: 0,
+    wifiGrade: '-', videoRes: '-', gameLatency: 0, gameGrade: '-'
+};
+
+function goToDetection(reset) {
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    document.getElementById('detectionPage').classList.add('active');
+    if (reset) {
+        document.getElementById('detectHome').style.display = 'block';
+        document.getElementById('detectRunning').style.display = 'none';
+        document.getElementById('detectReport').style.display = 'none';
+        document.getElementById('detectBtns').style.display = 'none';
+    }
+}
+
+function backToHome() {
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    document.getElementById('landingPage').classList.add('active');
+}
+
+function setDetectStatus(icon, text, progress) {
+    document.getElementById('detectIcon').textContent = icon;
+    document.getElementById('detectStatusText').textContent = text;
+    if (progress !== undefined) {
+        document.getElementById('detectProgressBar').style.width = progress + '%';
+    }
+}
+
+// ---- 下载测速 ----
+function testDownload(onUpdate) {
+    return new Promise(function(resolve) {
+        // 使用多个CDN测速文件，取最快结果
+        var files = [
+            'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js',
+            'https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.min.js',
+            'https://unpkg.com/react@18.3.1/umd/react.production.min.js'
+        ];
+        var results = [];
+        var done = 0;
+        var totalFiles = files.length;
+
+        files.forEach(function(url, i) {
+            var start = performance.now();
+            fetch(url + '?t=' + start, { cache: 'no-store' })
+                .then(function(r) { return r.blob(); })
+                .then(function(blob) {
+                    var elapsed = (performance.now() - start) / 1000; // 秒
+                    var bits = blob.size * 8;
+                    var bps = bits / elapsed;
+                    results.push(bps);
+                    onUpdate(bps);
+                    done++;
+                    if (done >= totalFiles) {
+                        // 取最大值（最快CDN）
+                        var best = Math.max.apply(null, results);
+                        resolve(best);
+                    }
+                })
+                .catch(function() {
+                    done++;
+                    if (done >= totalFiles) {
+                        resolve(results.length > 0 ? Math.max.apply(null, results) : 0);
+                    }
+                });
+        });
+    });
+}
+
+// ---- 上传测速 ----
+function testUpload(onUpdate) {
+    return new Promise(function(resolve) {
+        // 用 Cloudflare speed test 上传端点
+        var data = new Blob([new Uint8Array(2 * 1024 * 1024)]); // 2MB
+        var start = performance.now();
+        fetch('https://speed.cloudflare.com/__up', {
+            method: 'POST',
+            body: data,
+            cache: 'no-store'
+        }).then(function(r) {
+            var elapsed = (performance.now() - start) / 1000;
+            var bps = (data.size * 8) / elapsed;
+            onUpdate(bps);
+            resolve(bps);
+        }).catch(function() {
+            // 备用：httpbin
+            fetch('https://httpbin.org/post', {
+                method: 'POST',
+                body: data,
+                cache: 'no-store'
+            }).then(function() {
+                var elapsed = (performance.now() - start) / 1000;
+                var bps = (data.size * 8) / elapsed;
+                onUpdate(bps);
+                resolve(bps);
+            }).catch(function() {
+                resolve(0);
+            });
+        });
+    });
+}
+
+// ---- Ping检测 ----
+function testPing() {
+    return new Promise(function(resolve) {
+        var targets = [
+            'https://www.baidu.com/favicon.ico',
+            'https://www.qq.com/favicon.ico',
+            'https://www.taobao.com/favicon.ico'
+        ];
+        var allRTTs = [];
+
+        function pingOnce(url) {
+            return new Promise(function(resolve2) {
+                var start = performance.now();
+                fetch(url + '?t=' + start, { method: 'HEAD', cache: 'no-store', mode: 'no-cors' })
+                    .then(function() {
+                        var rtt = performance.now() - start;
+                        resolve2(rtt);
+                    })
+                    .catch(function() {
+                        resolve2(null);
+                    });
+            });
+        }
+
+        // 每个目标ping 6次
+        var totalPings = targets.length * 6;
+        var donePings = 0;
+        var failedPings = 0;
+
+        targets.forEach(function(url) {
+            for (var i = 0; i < 6; i++) {
+                (function(idx) {
+                    setTimeout(function() {
+                        pingOnce(url).then(function(rtt) {
+                            donePings++;
+                            if (rtt === null) {
+                                failedPings++;
+                            } else {
+                                allRTTs.push(rtt);
+                            }
+                            if (donePings >= totalPings) {
+                                if (allRTTs.length === 0) {
+                                    resolve({ ping: 999, jitter: 0, loss: 100 });
+                                    return;
+                                }
+                                allRTTs.sort(function(a, b) { return a - b; });
+                                // 去掉最高和最低，取中间值
+                                var trimmed = allRTTs.slice(1, -1);
+                                var avg = trimmed.reduce(function(a, b) { return a + b; }, 0) / trimmed.length;
+                                // 抖动 = 相邻RTT差值的平均
+                                var jitterSum = 0;
+                                for (var j = 1; j < trimmed.length; j++) {
+                                    jitterSum += Math.abs(trimmed[j] - trimmed[j - 1]);
+                                }
+                                var jitter = trimmed.length > 1 ? jitterSum / (trimmed.length - 1) : 0;
+                                var loss = Math.round(failedPings / totalPings * 100);
+                                resolve({
+                                    ping: Math.round(avg),
+                                    jitter: Math.round(jitter),
+                                    loss: loss
+                                });
+                            }
+                        });
+                    }, idx * 400);
+                })(i);
+            }
+        });
+    });
+}
+
+// ---- WiFi信号评估 ----
+function assessWifi(downloadBps, pingMs) {
+    var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    var grade = '-';
+    var details = [];
+
+    if (conn) {
+        if (conn.effectiveType) details.push('网络类型: ' + conn.effectiveType);
+        if (conn.downlink) details.push('估算带宽: ' + conn.downlink + ' Mbps');
+        if (conn.rtt) details.push('估算延迟: ' + conn.rtt + ' ms');
+    }
+
+    var dlMbps = downloadBps / 1000000;
+    var score = 0;
+    if (dlMbps >= 50) score += 40;
+    else if (dlMbps >= 20) score += 30;
+    else if (dlMbps >= 10) score += 20;
+    else if (dlMbps >= 5) score += 10;
+
+    if (pingMs <= 20) score += 40;
+    else if (pingMs <= 40) score += 30;
+    else if (pingMs <= 80) score += 20;
+    else if (pingMs <= 150) score += 10;
+
+    if (conn && conn.effectiveType) {
+        if (conn.effectiveType === '4g') score += 20;
+        else if (conn.effectiveType === '3g') score += 10;
+    } else {
+        score += 15; // 默认给中等分
+    }
+
+    if (score >= 80) grade = '优';
+    else if (score >= 50) grade = '良';
+    else if (score >= 25) grade = '中';
+    else grade = '差';
+
+    return { grade: grade, score: score, details: details };
+}
+
+// ---- 视频测速 ----
+function assessVideo(downloadBps) {
+    var mbps = downloadBps / 1000000;
+    var qualities = [
+        { name: '4K 超清', min: 25, tag: '4K' },
+        { name: '1080P 蓝光', min: 10, tag: '1080P' },
+        { name: '720P 高清', min: 5, tag: '720P' },
+        { name: '480P 标清', min: 2, tag: '480P' },
+        { name: '360P 流畅', min: 1, tag: '360P' }
+    ];
+    var best = '360P 流畅';
+    for (var i = 0; i < qualities.length; i++) {
+        if (mbps >= qualities[i].min) {
+            best = qualities[i].name;
+            break;
+        }
+    }
+    return best;
+}
+
+// ---- 游戏测速 ----
+function assessGame(pingMs, jitterMs, lossPct) {
+    var games = [
+        { name: '王者荣耀', good: 60, ok: 100 },
+        { name: '和平精英', good: 50, ok: 90 },
+        { name: '原神', good: 70, ok: 120 },
+        { name: '英雄联盟', good: 50, ok: 90 },
+        { name: 'CS2', good: 40, ok: 80 },
+        { name: 'DNF', good: 60, ok: 100 },
+        { name: '永劫无间', good: 55, ok: 100 },
+        { name: '蛋仔派对', good: 65, ok: 110 }
+    ];
+    var tags = games.map(function(g) {
+        var cls = 'red';
+        var label = '卡顿';
+        // 丢包严重影响游戏
+        if (lossPct > 5) {
+            cls = 'red'; label = '严重卡顿';
+        } else if (pingMs <= g.good && jitterMs <= 20) {
+            cls = 'green'; label = '流畅';
+        } else if (pingMs <= g.ok) {
+            cls = 'yellow'; label = '一般';
+        }
+        return { name: g.name, cls: cls, label: label };
+    });
+
+    var overall = '良好';
+    if (pingMs <= 30 && jitterMs <= 15 && lossPct === 0) overall = '优秀';
+    else if (pingMs <= 60 && jitterMs <= 30 && lossPct <= 2) overall = '良好';
+    else if (pingMs <= 100 && lossPct <= 5) overall = '一般';
+    else overall = '较差';
+
+    return { tags: tags, overall: overall };
+}
+
+// ---- 格式化速度 ----
+function formatSpeed(bps) {
+    var mbps = bps / 1000000;
+    if (mbps >= 100) return mbps.toFixed(0);
+    if (mbps >= 10) return mbps.toFixed(1);
+    return mbps.toFixed(2);
+}
+
+// ---- 主检测流程 ----
+async function startDetection() {
+    document.getElementById('detectHome').style.display = 'none';
+    document.getElementById('detectRunning').style.display = 'block';
+    document.getElementById('detectReport').style.display = 'none';
+    document.getElementById('detectBtns').style.display = 'none';
+    document.getElementById('detectLiveResults').innerHTML = '';
+
+    // 1. Ping检测
+    setDetectStatus('📡', '正在检测延迟...', 5);
+    var liveHtml = '<div class="detect-card" id="livePing"><h3>📡 延迟检测</h3><div class="detect-status"><div class="icon">⏳</div><div class="text">正在Ping多个服务器...</div></div></div>';
+    document.getElementById('detectLiveResults').innerHTML = liveHtml;
+    var pingResult = await testPing();
+    detectResults.ping = pingResult.ping;
+    detectResults.jitter = pingResult.jitter;
+    detectResults.loss = pingResult.loss;
+    document.getElementById('livePing').innerHTML = '<h3>📡 延迟检测</h3>' +
+        '<div class="detect-row"><span class="label">平均延迟</span><span class="value ' + (pingResult.ping <= 40 ? 'good' : pingResult.ping <= 80 ? 'ok' : 'bad') + '">' + pingResult.ping + ' ms</span></div>' +
+        '<div class="detect-row"><span class="label">抖动</span><span class="value ' + (pingResult.jitter <= 20 ? 'good' : pingResult.jitter <= 50 ? 'ok' : 'bad') + '">' + pingResult.jitter + ' ms</span></div>' +
+        '<div class="detect-row"><span class="label">丢包率</span><span class="value ' + (pingResult.loss === 0 ? 'good' : pingResult.loss <= 5 ? 'ok' : 'bad') + '">' + pingResult.loss + '%</span></div></div>';
+
+    // 2. 下载测速
+    setDetectStatus('⬇️', '正在测试下载速度...', 25);
+    var dlLive = '<div class="detect-card" id="liveDl"><h3>⬇️ 下载测速</h3><div class="speed-ring"><svg width="120" height="120"><circle cx="60" cy="60" r="52" fill="none" stroke="#f0f2f5" stroke-width="10"/><circle id="dlRing" cx="60" cy="60" r="52" fill="none" stroke="#2b7de9" stroke-width="10" stroke-dasharray="327" stroke-dashoffset="327" stroke-linecap="round"/></svg><div class="ring-text"><div class="num" id="dlLiveNum">0</div><div class="unit">Mbps</div></div></div></div>';
+    document.getElementById('detectLiveResults').insertAdjacentHTML('beforeend', dlLive);
+    var dlBps = await testDownload(function(bps) {
+        var mbps = bps / 1000000;
+        document.getElementById('dlLiveNum').textContent = formatSpeed(bps);
+        var pct = Math.min(mbps / 100, 1);
+        document.getElementById('dlRing').setAttribute('stroke-dashoffset', 327 - 327 * pct);
+    });
+    detectResults.download = dlBps;
+
+    // 3. 上传测速
+    setDetectStatus('⬆️', '正在测试上传速度...', 60);
+    var ulLive = '<div class="detect-card" id="liveUl"><h3>⬆️ 上传测速</h3><div class="detect-status"><div class="icon">⏳</div><div class="text">上传数据中...</div></div></div>';
+    document.getElementById('detectLiveResults').insertAdjacentHTML('beforeend', ulLive);
+    var ulBps = await testUpload(function(bps) {
+        document.getElementById('liveUl').innerHTML = '<h3>⬆️ 上传测速</h3><div class="detect-status"><div class="icon">⬆️</div><div class="text">' + formatSpeed(bps) + ' Mbps</div></div>';
+    });
+    detectResults.upload = ulBps;
+    document.getElementById('liveUl').innerHTML = '<h3>⬆️ 上传测速</h3><div class="detect-row"><span class="label">上传速度</span><span class="value ' + (ulBps / 1000000 >= 10 ? 'good' : ulBps / 1000000 >= 3 ? 'ok' : 'bad') + '">' + formatSpeed(ulBps) + ' Mbps</span></div></div>';
+
+    // 4. WiFi评估
+    setDetectStatus('📶', '正在评估WiFi信号...', 80);
+    var wifi = assessWifi(dlBps, pingResult.ping);
+    detectResults.wifiGrade = wifi.grade;
+
+    // 5. 视频测速
+    setDetectStatus('🎬', '评估视频体验...', 90);
+    var videoRes = assessVideo(dlBps);
+    detectResults.videoRes = videoRes;
+
+    // 6. 游戏测速
+    setDetectStatus('🎮', '评估游戏体验...', 95);
+    var game = assessGame(pingResult.ping, pingResult.jitter, pingResult.loss);
+    detectResults.gameLatency = pingResult.ping;
+    detectResults.gameGrade = game.overall;
+
+    // 生成报告
+    setDetectStatus('✅', '检测完成！', 100);
+    await new Promise(function(r) { setTimeout(r, 500); });
+
+    renderDetectReport(wifi, videoRes, game);
+}
+
+function renderDetectReport(wifi, videoRes, game) {
+    document.getElementById('detectRunning').style.display = 'none';
+    document.getElementById('detectReport').style.display = 'block';
+    document.getElementById('detectBtns').style.display = 'flex';
+
+    var dlMbps = formatSpeed(detectResults.download);
+    var ulMbps = formatSpeed(detectResults.upload);
+    var dlGrade = detectResults.download / 1000000 >= 50 ? 'good' : detectResults.download / 1000000 >= 10 ? 'ok' : 'bad';
+    var ulGrade = detectResults.upload / 1000000 >= 20 ? 'good' : detectResults.upload / 1000000 >= 5 ? 'ok' : 'bad';
+    var pingGrade = detectResults.ping <= 40 ? 'good' : detectResults.ping <= 80 ? 'ok' : 'bad';
+    var wifiColor = wifi.grade === '优' ? 'good' : wifi.grade === '良' ? 'ok' : 'bad';
+
+    var gameTagsHtml = game.tags.map(function(t) {
+        return '<span class="game-tag ' + t.cls + '">' + t.name + ' · ' + t.label + '</span>';
+    }).join('');
+
+    // 视频清晰度标签
+    var allQualities = ['4K 超清', '1080P 蓝光', '720P 高清', '480P 标清', '360P 流畅'];
+    var videoTagsHtml = allQualities.map(function(q) {
+        var active = videoRes === q;
+        return '<span class="video-quality-tag ' + (active ? 'active' : 'inactive') + '">' + q + '</span>';
+    }).join('');
+
+    var wifiDetailsHtml = wifi.details.length > 0
+        ? '<div style="margin-top:8px;font-size:12px;color:#999;">' + wifi.details.join(' · ') + '</div>'
+        : '';
+
+    // 综合评分
+    var totalScore = 0;
+    if (dlGrade === 'good') totalScore += 30; else if (dlGrade === 'ok') totalScore += 20; else totalScore += 8;
+    if (ulGrade === 'good') totalScore += 15; else if (ulGrade === 'ok') totalScore += 10; else totalScore += 4;
+    if (pingGrade === 'good') totalScore += 25; else if (pingGrade === 'ok') totalScore += 18; else totalScore += 6;
+    if (wifi.grade === '优') totalScore += 20; else if (wifi.grade === '良') totalScore += 15; else if (wifi.grade === '中') totalScore += 8; else totalScore += 3;
+    totalScore += 10; // 基础分
+
+    var overallText = totalScore >= 80 ? '网络状况优秀' : totalScore >= 60 ? '网络状况良好' : totalScore >= 40 ? '网络状况一般' : '网络状况较差';
+    var overallColor = totalScore >= 80 ? '#51cf66' : totalScore >= 60 ? '#2b7de9' : totalScore >= 40 ? '#f0a020' : '#ff6b6b';
+
+    var html = '';
+    // 总览
+    html += '<div class="detect-card" style="text-align:center;padding:24px 16px;">';
+    html += '<div style="font-size:36px;font-weight:700;color:' + overallColor + ';">' + totalScore + '</div>';
+    html += '<div style="font-size:14px;color:#999;margin-bottom:8px;">综合评分</div>';
+    html += '<div style="font-size:16px;font-weight:600;color:' + overallColor + ';">' + overallText + '</div>';
+    html += '</div>';
+
+    // 下载/上传
+    html += '<div class="detect-card"><h3>⚡ 网速结果</h3>';
+    html += '<div class="detect-row"><span class="label">下载速度</span><span class="value ' + dlGrade + '">' + dlMbps + ' Mbps</span></div>';
+    html += '<div class="detect-row"><span class="label">上传速度</span><span class="value ' + ulGrade + '">' + ulMbps + ' Mbps</span></div>';
+    html += '</div>';
+
+    // 延迟
+    html += '<div class="detect-card"><h3>📡 延迟与稳定性</h3>';
+    html += '<div class="detect-row"><span class="label">平均延迟</span><span class="value ' + pingGrade + '">' + detectResults.ping + ' ms</span></div>';
+    html += '<div class="detect-row"><span class="label">抖动</span><span class="value ' + (detectResults.jitter <= 20 ? 'good' : detectResults.jitter <= 50 ? 'ok' : 'bad') + '">' + detectResults.jitter + ' ms</span></div>';
+    html += '<div class="detect-row"><span class="label">丢包率</span><span class="value ' + (detectResults.loss === 0 ? 'good' : detectResults.loss <= 5 ? 'ok' : 'bad') + '">' + detectResults.loss + '%</span></div>';
+    html += '</div>';
+
+    // WiFi评估
+    html += '<div class="detect-card"><h3>📶 WiFi信号评估</h3>';
+    html += '<div class="detect-row"><span class="label">信号等级</span><span class="value ' + wifiColor + '">' + wifi.grade + '</span></div>';
+    html += wifiDetailsHtml;
+    html += '</div>';
+
+    // 视频体验
+    html += '<div class="detect-card"><h3>🎬 视频体验</h3>';
+    html += '<div class="detect-row"><span class="label">最高支持清晰度</span><span class="value good">' + videoRes + '</span></div>';
+    html += '<div style="margin-top:8px;">' + videoTagsHtml + '</div>';
+    html += '</div>';
+
+    // 游戏体验
+    html += '<div class="detect-card"><h3>🎮 游戏体验</h3>';
+    html += '<div class="detect-row"><span class="label">综合游戏体验</span><span class="value ' + (game.overall === '优秀' || game.overall === '良好' ? 'good' : game.overall === '一般' ? 'ok' : 'bad') + '">' + game.overall + '</span></div>';
+    html += '<div style="margin-top:8px;">' + gameTagsHtml + '</div>';
+    html += '</div>';
+
+    document.getElementById('detectReport').innerHTML = html;
+}
+
 </script>
 </body>
 </html>
