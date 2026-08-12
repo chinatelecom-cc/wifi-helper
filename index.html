@@ -1106,6 +1106,9 @@ function initOptDrag() {
     canvas.addEventListener('touchmove', moveDrag, { passive: false });
     canvas.addEventListener('touchend', endDrag);
     canvas.addEventListener('touchcancel', endDrag);
+
+    // cloneNode清空了画布，需要重绘
+    drawOptAll();
 }
 
 function generateOptPlan() {
