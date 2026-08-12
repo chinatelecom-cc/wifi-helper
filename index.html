@@ -682,17 +682,32 @@ function updateCoverageBar() {
 
 function calcCoverage(devices) {
     if (!devices || devices.length === 0) return 0;
-    var area = parseInt(selectedHouse.acreage);
-    var totalRange = 0;
-    devices.forEach(function(pd) {
-        var dev = DEVICES.find(function(d) { return d.id === pd.id; });
-        if (dev) totalRange += dev.range;
-    });
-    // 根据面积和设备范围计算覆盖率
-    var rawCov = Math.min(98, Math.round((totalRange * totalRange) / area * 30 + devices.length * 5 + 10));
-    // 现有组网覆盖率削弱40%，突出优化方案优势
-    var cov = Math.round(rawCov * 0.6);
-    return cov;
+    // 直接扫描热力图Canvas像素，统计有信号覆盖的比例
+    var canvas = document.getElementById('heatmapCanvas');
+    if (!canvas || canvas.width === 0) return 0;
+    var ctx = canvas.getContext('2d');
+    try {
+        var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        var data = imgData.data;
+        var totalPixels = 0;
+        var coveredPixels = 0;
+        // 采样步长：每隔step个像素取一次，降低计算量
+        var step = 4;
+        for (var y = 0; y < canvas.height; y += step) {
+            for (var x = 0; x < canvas.width; x += step) {
+                var idx = (y * canvas.width + x) * 4;
+                var alpha = data[idx + 3];
+                totalPixels++;
+                // alpha > 10 视为有信号覆盖
+                if (alpha > 10) coveredPixels++;
+            }
+        }
+        if (totalPixels === 0) return 0;
+        var ratio = coveredPixels / totalPixels;
+        return Math.round(ratio * 100);
+    } catch(e) {
+        return 0;
+    }
 }
 
 // ============ 拖动交互 ============
