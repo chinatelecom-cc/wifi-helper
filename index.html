@@ -992,8 +992,16 @@ function initOptDrag() {
     var canvas = document.getElementById('optDeviceCanvas');
     if (!canvas) return;
 
-    // 移除旧事件监听器（通过克隆节点）
+    // 移除旧事件监听器（通过克隆节点），但保留canvas尺寸
+    var oldW = canvas.width;
+    var oldH = canvas.height;
+    var oldStyleW = canvas.style.width;
+    var oldStyleH = canvas.style.height;
     var newCanvas = canvas.cloneNode(true);
+    newCanvas.width = oldW;
+    newCanvas.height = oldH;
+    newCanvas.style.width = oldStyleW;
+    newCanvas.style.height = oldStyleH;
     canvas.parentNode.replaceChild(newCanvas, canvas);
     canvas = newCanvas;
     // 恢复class
