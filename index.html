@@ -1141,17 +1141,24 @@ function backToDetectHome() {
     document.getElementById('detectBtns').style.display = 'none';
 }
 
-// ---- 下载测速（Cloudflare专用大文件端点+8路并行+12秒流式计数）----
+// ---- 下载测速（双源：Cloudflare+jsDelivr国内CDN，10路并行，4秒预热+8秒测量）----
 function testDownload(onUpdate) {
     return new Promise(function(resolve) {
-        // Cloudflare speed test 专用端点，不限速、全球CDN边缘节点、支持CORS跨域
-        var dlSize = 262144000; // 250MB，足够8秒高速下载
+        // 双数据源：Cloudflare测速端点（支持CORS+流式） + jsDelivr国内CDN（支持CORS）
+        var dlSize = 262144000; // 250MB Cloudflare大文件
+        var jsdFiles = [
+            'https://cdn.jsdelivr.net/npm/@babel/standalone@7.24.7/babel.min.js',
+            'https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js',
+            'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/editor/editor.main.js',
+            'https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.min.js',
+            'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js'
+        ];
         function cfUrl(connIdx) {
             return 'https://speed.cloudflare.com/__down?bytes=' + dlSize + '&t=' + Date.now() + 'c' + connIdx + 'r' + Math.random();
         }
-        var parallel = 8;      // 8路并行连接（最大化利用带宽）
+        var parallel = 10;     // 10路并行（8路CF + 2路jsDelivr）
         var duration = 8000;   // 测量持续8秒
-        var warmup = 2000;     // 前2秒为预热期不计数（TCP握手+TLS+慢启动）
+        var warmup = 4000;     // 前4秒为预热期（国际链路TCP慢启动严重）
         var totalBytes = 0;
         var connections = [];
         var startTime = 0;
@@ -1173,7 +1180,14 @@ function testDownload(onUpdate) {
             if (stopped) return;
             var ctrl = new AbortController();
             connections.push(ctrl);
-            var url = cfUrl(i);
+            // 前8路用Cloudflare，后2路用jsDelivr国内CDN
+            var isJSD = (i >= 8);
+            var url;
+            if (isJSD) {
+                url = jsdFiles[i % jsdFiles.length] + '?t=' + Date.now() + 'j' + i;
+            } else {
+                url = cfUrl(i);
+            }
             fetch(url, { cache: 'no-store', signal: ctrl.signal })
                 .then(function(resp) {
                     if (!resp.body) {
@@ -1211,12 +1225,14 @@ function testDownload(onUpdate) {
         startTime = performance.now();
         measureStart = 0;
 
-        // 启动8路并行下载
+        // 启动10路并行下载（分批启动避免瞬间拥塞）
         for (var i = 0; i < parallel; i++) {
-            startConn(i);
+            (function(idx) {
+                setTimeout(function() { startConn(idx); }, idx * 100);
+            })(i);
         }
 
-        // 预热2秒后开始统计
+        // 预热4秒后开始统计
         setTimeout(function() {
             measureStart = performance.now();
             totalBytes = 0;
@@ -1413,15 +1429,23 @@ async function runSpeedTest() {
         '<div id="spLive"></div>'
     );
 
-    // 下载（Cloudflare大文件+国内镜像混合 6路并行 8秒流式计数 1.5秒预热）
+    // 下载（双源10路并行 4秒预热+8秒测量）
     var dlBps = await testDownload(function(bps, elapsed, total) {
         var el = document.getElementById('spLive');
         var st = document.getElementById('spStatus');
         var pg = document.getElementById('spProg');
-        if (st) st.textContent = '正在测试下载速度（' + elapsed + '/' + total + '秒）...';
-        if (pg) pg.style.width = (5 + elapsed / total * 40) + '%';
-        var liveGrade = bps / 1000000 >= 50 ? 'good' : bps / 1000000 >= 10 ? 'ok' : 'bad';
-        if (el) el.innerHTML = '<div class="detect-card"><div class="speed-duo"><div class="speed-duo-item"><div class="num ' + liveGrade + '">' + formatSpeed(bps) + '</div><div class="unit">Mbps</div><div class="label">下载速度</div></div><div class="speed-duo-item"><div class="num" style="color:#ccc;">...</div><div class="unit">Mbps</div><div class="label">上传速度</div></div></div></div>';
+        var warmupSec = 4;
+        if (elapsed < warmupSec) {
+            // 预热期：显示"连接加速中"而非0Mbps
+            if (st) st.textContent = '正在建立连接加速中（' + elapsed + '/' + total + '秒）...';
+            if (pg) pg.style.width = (5 + elapsed / total * 40) + '%';
+            if (el) el.innerHTML = '<div class="detect-card" style="text-align:center;padding:16px 0;color:#999;font-size:15px;">⏳ 连接预热中，请稍候...</div>';
+        } else {
+            if (st) st.textContent = '正在测试下载速度（' + elapsed + '/' + total + '秒）...';
+            if (pg) pg.style.width = (5 + elapsed / total * 40) + '%';
+            var liveGrade = bps / 1000000 >= 50 ? 'good' : bps / 1000000 >= 10 ? 'ok' : 'bad';
+            if (el) el.innerHTML = '<div class="detect-card"><div class="speed-duo"><div class="speed-duo-item"><div class="num ' + liveGrade + '">' + formatSpeed(bps) + '</div><div class="unit">Mbps</div><div class="label">下载速度</div></div><div class="speed-duo-item"><div class="num" style="color:#ccc;">...</div><div class="unit">Mbps</div><div class="label">上传速度</div></div></div></div>';
+        }
     });
 
     var prog = document.getElementById('spProg');
