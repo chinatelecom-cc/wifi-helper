@@ -1909,7 +1909,7 @@ function drawHeatmap(canvasId, devices) {
         var devCx = pd.x * w;
         var devCy = pd.y * h;
         var diag = Math.sqrt(w * w + h * h);
-        var maxDist = dev.range * dpr * diag / 12; // 调大覆盖范围，接近沈阳网站效果
+        var maxDist = dev.range * dpr * diag / 9; // 调大覆盖范围，接近沈阳网站79%覆盖率
         var step = Math.max(3, Math.round(4 * dpr));
 
         for (var py = 0; py < h; py += step) {
