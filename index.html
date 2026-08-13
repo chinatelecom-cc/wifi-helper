@@ -2535,7 +2535,7 @@ function generateOptPlan() {
 function renderOptAddDeviceList() {
     var list = document.getElementById('optAddDeviceList');
     if (!list) return;
-    var addableIds = ['maingw', 'subgw', 'wifi7', 'wifi6', 'optical', 'ibox'];
+    var addableIds = ['maingw', 'subgw', 'wifi7', 'wifi6', 'ap', 'optical', 'ibox'];
     var addableDevices = addableIds.map(function(id) {
         return DEVICES.find(function(d) { return d.id === id; });
     }).filter(function(d) { return d; });
