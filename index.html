@@ -132,6 +132,55 @@
             font-size: 16px;
         }
 
+        /* 底部设备横向列表（参照沈阳网站） */
+        .device-bar {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            gap: 4px;
+            padding: 12px 0;
+        }
+        .device-bar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 56px;
+        }
+        .device-bar-item:active { transform: scale(0.95); }
+        .device-bar-icon {
+            width: 40px; height: 40px;
+            background: #f5f7fa;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            border: 1.5px solid #e8e8e8;
+        }
+        .device-bar-item.placed .device-bar-icon {
+            border-color: #2b7de9;
+            background: #e8f4ff;
+        }
+        .device-bar-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+            text-align: center;
+            line-height: 1.2;
+        }
+        .device-bar-desc {
+            font-size: 10px;
+            color: #999;
+            text-align: center;
+            line-height: 1.2;
+        }
+        .device-bar-count {
+            font-size: 10px;
+            color: #2b7de9;
+            font-weight: 500;
+        }
+
         /* 提示文字 */
         .drag-hint {
             text-align: center; font-size: 12px; color: #999;
@@ -425,7 +474,7 @@
         </div>
         <div class="device-panel">
             <h3>点击添加WiFi设备到户型图</h3>
-            <div class="device-list" id="deviceList"></div>
+            <div class="device-bar" id="deviceList"></div>
         </div>
     </div>
     <div class="btn-group">
@@ -461,7 +510,7 @@
         <div id="optDeviceList"></div>
         <div id="optAddDeviceSection" style="margin-top:16px;padding-top:16px;border-top:1px solid #eee;">
             <h3 style="font-size:14px;color:#666;margin-bottom:10px;">添加自定义设备</h3>
-            <div id="optAddDeviceList" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+            <div id="optAddDeviceList" class="device-bar"></div>
         </div>
     </div>
     <div class="btn-group">
@@ -556,11 +605,12 @@ const ROOM_TYPES = [
 ];
 
 const DEVICES = [
-    { id: 'wifi5',   name: 'WiFi5路由器', icon: '📶', range: 6,  price: 0,   desc: '现有设备', color: '#ff6b6b' },
-    { id: 'wifi6',   name: 'WiFi6路由器', icon: '📡', range: 10, price: 299, desc: '千兆双频', color: '#2b7de9' },
-    { id: 'ap',      name: 'AP面板',      icon: '🔌', range: 5,  price: 199, desc: '86面板式', color: '#51cf66' },
-    { id: 'optical', name: '万兆光猫',    icon: '🔲', range: 3,  price: 399, desc: '10G PON',  color: '#ffd93d' },
-    { id: 'ibox',    name: '信息箱',      icon: '📦', range: 2,  price: 150, desc: '弱电箱',   color: '#ff922b' }
+    { id: 'subgw',   name: '子网关',    icon: 'subgw',   emoji: '📡', range: 8,  price: 299, desc: 'FTTR',    color: '#2b7de9' },
+    { id: 'wifi7',   name: 'WiFi7',     icon: 'wifi7',   emoji: '📶', range: 12, price: 499, desc: '路由器',   color: '#7c3aed' },
+    { id: 'wifi6',   name: 'WiFi6',     icon: 'wifi6',   emoji: '📡', range: 10, price: 299, desc: '路由器',   color: '#2b7de9' },
+    { id: 'wifi5',   name: 'WiFi5路由器', icon: 'wifi5', emoji: '📶', range: 6,  price: 0,   desc: '现有设备', color: '#ff6b6b' },
+    { id: 'optical', name: '万兆光猫',   icon: 'optical', emoji: '🔲', range: 3,  price: 399, desc: '万兆光猫', color: '#ffd93d' },
+    { id: 'ibox',    name: '信息箱',     icon: 'ibox',    emoji: '📦', range: 2,  price: 150, desc: '信息箱',   color: '#ff922b' }
 ];
 
 // ============ 墙体数据（从SVG文件提取的墙壁线段，用于穿墙信号衰减） ============
@@ -1388,10 +1438,11 @@ function renderDeviceList() {
     var list = document.getElementById('deviceList');
     list.innerHTML = DEVICES.map(function(d) {
         var placed = placedDevices.filter(function(p) { return p.id === d.id; });
-        return '<div class="device-item' + (placed.length > 0 ? ' placed' : '') + '" onclick="addDevice(\'' + d.id + '\')">' +
-            '<span class="device-icon">' + d.icon + '</span>' +
-            '<span>' + d.name + '</span>' +
-            (placed.length > 0 ? '<span style="color:#2b7de9;margin-left:4px;">x' + placed.length + '</span>' : '') +
+        var isPlaced = placed.length > 0;
+        return '<div class="device-bar-item' + (isPlaced ? ' placed' : '') + '" onclick="addDevice(\'' + d.id + '\')">' +
+            '<div class="device-bar-icon">' + (d.emoji || d.icon) + '</div>' +
+            '<div class="device-bar-name">' + d.name + '</div>' +
+            (isPlaced ? '<div class="device-bar-count">x' + placed.length + '</div>' : '') +
             '</div>';
     }).join('');
 }
@@ -1439,68 +1490,110 @@ function drawHeatmap(canvasId, devices) {
 
     ctx.clearRect(0, 0, w, h);
 
-    // 获取墙体线段数据（用于穿墙衰减）
+    if (!devices || devices.length === 0) return;
+
+    // 获取墙体线段数据
     var walls = getWallSegments(canvasId);
 
-    // 使用逐像素方式绘制热力图，以支持穿墙衰减
-    var step = Math.max(2, Math.round(3 * dpr)); // 采样步长，平衡精度与性能
+    // 色阶定义（5级）：红→橙→黄→绿→淡紫
+    var colorStops = [
+        [230, 50, 50, 0.55],    // 红色：信号最优
+        [255, 140, 30, 0.45],   // 橙色：信号良好
+        [240, 210, 20, 0.35],   // 黄色：信号中等
+        [80, 190, 60, 0.22],    // 绿色：信号较弱
+        [160, 150, 210, 0.14]   // 淡紫色：信号极差
+    ];
 
-    // 先用径向渐变绘制每个设备的信号（不穿墙的基础信号）
-    devices.forEach(function(pd) {
-        var dev = DEVICES.find(function(d) { return d.id === pd.id; });
-        if (!dev || dev.range <= 0) return;
+    // 使用射线法计算每个像素的穿墙次数和信号强度
+    var step = Math.max(3, Math.round(4 * dpr));
+    var imgData = ctx.createImageData(w, h);
+    var data = imgData.data;
 
-        var cx = pd.x * w;
-        var cy = pd.y * h;
-        var diag = Math.sqrt(w * w + h * h);
-        var radius = dev.range * dpr * diag / 38;
-
-        // 径向渐变热力图：红（强）→橙→黄→绿（弱）
-        var grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-        grad.addColorStop(0,    'rgba(255, 50, 50, 0.5)');   // 中心：红色（信号强）
-        grad.addColorStop(0.2,  'rgba(255, 100, 40, 0.42)'); // 红橙
-        grad.addColorStop(0.4,  'rgba(255, 160, 0, 0.35)');  // 橙色
-        grad.addColorStop(0.6,  'rgba(255, 214, 10, 0.28)'); // 黄色
-        grad.addColorStop(0.8,  'rgba(130, 200, 50, 0.18)'); // 黄绿
-        grad.addColorStop(1,    'rgba(60, 160, 80, 0)');      // 边缘：绿色全透明
-
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
-        ctx.fill();
+    // 预处理：将每面墙转换为参数方程形式，加速射线求交
+    var wallSegments = walls.map(function(wl) {
+        var dx = wl.x2 - wl.x1;
+        var dy = wl.y2 - wl.y1;
+        var len = Math.sqrt(dx * dx + dy * dy);
+        return { x1: wl.x1, y1: wl.y1, x2: wl.x2, y2: wl.y2, dx: dx, dy: dy, len: len };
     });
 
-    // 在墙体位置绘制半透明遮罩，模拟穿墙信号衰减
-    if (walls && walls.length > 0) {
-        ctx.save();
-        ctx.globalCompositeOperation = 'destination-out';
-        walls.forEach(function(wall) {
-            // 沿墙体绘制一定宽度的透明带，削弱穿墙信号
-            var wallWidth = 3 * dpr;
-            ctx.beginPath();
-            ctx.moveTo(wall.x1, wall.y1);
-            ctx.lineTo(wall.x2, wall.y2);
-            ctx.lineWidth = wallWidth * 2;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-            ctx.stroke();
-        });
-        ctx.restore();
+    // 对每个采样像素，计算所有设备叠加后的最高信号强度
+    for (var py = 0; py < h; py += step) {
+        for (var px = 0; px < w; px += step) {
+            var bestLevel = -1; // -1=无信号, 0=最优(红), 1=橙, 2=黄, 3=绿, 4=淡紫
 
-        // 在墙体两侧叠加冷色调（蓝紫色），表示穿墙后信号弱
-        ctx.save();
-        walls.forEach(function(wall) {
-            var wallWidth = 4 * dpr;
-            ctx.beginPath();
-            ctx.moveTo(wall.x1, wall.y1);
-            ctx.lineTo(wall.x2, wall.y2);
-            ctx.lineWidth = wallWidth * 2;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = 'rgba(100, 120, 180, 0.15)';
-            ctx.stroke();
-        });
-        ctx.restore();
+            for (var di = 0; di < devices.length; di++) {
+                var pd = devices[di];
+                var dev = DEVICES.find(function(d) { return d.id === pd.id; });
+                if (!dev || dev.range <= 0) continue;
+
+                var cx = pd.x * w;
+                var cy = pd.y * h;
+                var ddx = px - cx;
+                var ddy = py - cy;
+                var dist = Math.sqrt(ddx * ddx + ddy * ddy);
+
+                var diag = Math.sqrt(w * w + h * h);
+                var maxDist = dev.range * dpr * diag / 38;
+                if (dist > maxDist) continue;
+
+                // 计算从设备到该像素的射线穿过了几堵墙
+                var wallCount = 0;
+                var rayDx = ddx;
+                var rayDy = ddy;
+                var rayLen = dist;
+                if (rayLen > 0) {
+                    for (var wi = 0; wi < wallSegments.length; wi++) {
+                        var ws = wallSegments[wi];
+                        if (ws.len < 1) continue;
+                        // 射线-线段求交
+                        var sdx = ws.dx, sdy = ws.dy;
+                        var denom = rayDx * sdy - rayDy * sdx;
+                        if (Math.abs(denom) < 0.001) continue;
+                        var t = ((ws.x1 - cx) * sdy - (ws.y1 - cy) * sdx) / denom;
+                        var u = ((ws.x1 - cx) * rayDy - (ws.y1 - cy) * rayDx) / denom;
+                        if (t > 0.01 && t < 0.99 && u > 0 && u < 1) {
+                            wallCount++;
+                        }
+                    }
+                }
+
+                // 基础信号等级（按距离衰减）
+                var distRatio = dist / maxDist;
+                var baseLevel;
+                if (distRatio < 0.15) baseLevel = 0;
+                else if (distRatio < 0.35) baseLevel = 1;
+                else if (distRatio < 0.55) baseLevel = 2;
+                else if (distRatio < 0.78) baseLevel = 3;
+                else baseLevel = 4;
+
+                // 穿墙后每堵墙降一个等级
+                var finalLevel = baseLevel + wallCount;
+                if (finalLevel > 4) finalLevel = 4;
+
+                // 多设备叠加取最优等级
+                if (bestLevel < 0 || finalLevel < bestLevel) {
+                    bestLevel = finalLevel;
+                }
+            }
+
+            if (bestLevel >= 0 && bestLevel < colorStops.length) {
+                var cs = colorStops[bestLevel];
+                // 填充step*step的方块
+                for (var sy = 0; sy < step && (py + sy) < h; sy++) {
+                    for (var sx = 0; sx < step && (px + sx) < w; sx++) {
+                        var idx = ((py + sy) * w + (px + sx)) * 4;
+                        data[idx] = cs[0];
+                        data[idx + 1] = cs[1];
+                        data[idx + 2] = cs[2];
+                        data[idx + 3] = cs[3] * 255;
+                    }
+                }
+            }
+        }
     }
+
+    ctx.putImageData(imgData, 0, 0);
 }
 
 // ============ 墙体线段提取 ============
@@ -1562,60 +1655,217 @@ function drawDevices(canvasId, devices, opts) {
 
         var cx = pd.x * canvas.width;
         var cy = pd.y * canvas.height;
-        var r = 18 * dpr;
+        var r = 16 * dpr;
+        var rw = r * 2.2;  // 圆角矩形宽度
+        var rh = r * 2.2;  // 圆角矩形高度
+        var cr = 6 * dpr;  // 圆角半径
 
         // 外圈阴影
-        ctx.beginPath();
-        ctx.arc(cx, cy, r + 2 * dpr, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(0,0,0,0.15)';
-        ctx.fill();
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.18)';
+        ctx.shadowBlur = 4 * dpr;
+        ctx.shadowOffsetY = 2 * dpr;
 
-        // 设备底圈
+        // 白色圆角矩形背景
+        var rx = cx - rw / 2;
+        var ry = cy - rh / 2;
         ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = dev.color || '#2b7de9';
+        ctx.moveTo(rx + cr, ry);
+        ctx.lineTo(rx + rw - cr, ry);
+        ctx.arcTo(rx + rw, ry, rx + rw, ry + cr, cr);
+        ctx.lineTo(rx + rw, ry + rh - cr);
+        ctx.arcTo(rx + rw, ry + rh, rx + rw - cr, ry + rh, cr);
+        ctx.lineTo(rx + cr, ry + rh);
+        ctx.arcTo(rx, ry + rh, rx, ry + rh - cr, cr);
+        ctx.lineTo(rx, ry + cr);
+        ctx.arcTo(rx, ry, rx + cr, ry, cr);
+        ctx.closePath();
+        ctx.fillStyle = '#fff';
         ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2 * dpr;
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 1 * dpr;
         ctx.stroke();
+        ctx.restore();
 
-        // 设备图标（emoji）
-        ctx.fillStyle = '#fff';
-        ctx.font = (14 * dpr) + 'px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(dev.icon, cx, cy);
+        // 绘制设备简笔图案
+        ctx.save();
+        ctx.strokeStyle = '#5a6577';  // 蓝灰色
+        ctx.fillStyle = '#5a6577';
+        ctx.lineWidth = 1.5 * dpr;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
 
-        // 序号标签
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold ' + (8 * dpr) + 'px sans-serif';
-        ctx.fillText(String(idx + 1), cx, cy + r + 6 * dpr);
+        var iconType = dev.icon;
+        var s = r * 0.55; // 图标缩放因子
+
+        if (iconType === 'subgw' || iconType === 'wifi6' || iconType === 'wifi7' || iconType === 'wifi5') {
+            // 路由器：机身+天线+蓝色指示灯
+            var bw = s * 1.6; // 机身宽
+            var bh = s * 0.9; // 机身高
+            var bx = cx - bw / 2;
+            var by = cy + s * 0.2;
+
+            // 天线
+            var antennaCount = iconType === 'subgw' ? 2 : 3;
+            var antennaSpacing = bw / (antennaCount + 1);
+            for (var ai = 0; ai < antennaCount; ai++) {
+                var ax = bx + antennaSpacing * (ai + 1);
+                ctx.beginPath();
+                ctx.moveTo(ax, by);
+                ctx.lineTo(ax, by - s * 1.2);
+                ctx.stroke();
+                // 天线顶端小圆
+                ctx.beginPath();
+                ctx.arc(ax, by - s * 1.2, 1.5 * dpr, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 机身（圆角矩形）
+            var bodyCr = 2 * dpr;
+            ctx.beginPath();
+            ctx.moveTo(bx + bodyCr, by);
+            ctx.lineTo(bx + bw - bodyCr, by);
+            ctx.arcTo(bx + bw, by, bx + bw, by + bodyCr, bodyCr);
+            ctx.lineTo(bx + bw, by + bh - bodyCr);
+            ctx.arcTo(bx + bw, by + bh, bx + bw - bodyCr, by + bh, bodyCr);
+            ctx.lineTo(bx + bodyCr, by + bh);
+            ctx.arcTo(bx, by + bh, bx, by + bh - bodyCr, bodyCr);
+            ctx.lineTo(bx, by + bodyCr);
+            ctx.arcTo(bx, by, bx + bodyCr, by, bodyCr);
+            ctx.closePath();
+            ctx.stroke();
+
+            // 蓝色指示灯
+            ctx.fillStyle = '#3b82f6';
+            var ledCount = iconType === 'wifi7' ? 3 : 2;
+            var ledY = by + bh * 0.55;
+            var ledSpacing = bw / (ledCount + 1);
+            for (var li = 0; li < ledCount; li++) {
+                var lx = bx + ledSpacing * (li + 1);
+                ctx.beginPath();
+                ctx.arc(lx, ledY, 1.5 * dpr, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // WiFi7/WiFi6标注信号线（顶部弧形）
+            if (iconType === 'wifi6' || iconType === 'wifi7') {
+                ctx.strokeStyle = '#3b82f6';
+                ctx.lineWidth = 1.2 * dpr;
+                var arcY = by - s * 1.2 - s * 0.3;
+                for (var si = 0; si < 2; si++) {
+                    var arcR = s * 0.5 + si * s * 0.35;
+                    ctx.beginPath();
+                    ctx.arc(cx, arcY, arcR, -Math.PI * 0.75, -Math.PI * 0.25);
+                    ctx.stroke();
+                }
+            }
+
+        } else if (iconType === 'optical') {
+            // 万兆光猫：方形机身+蓝色指示灯
+            var bw = s * 1.8;
+            var bh = s * 1.2;
+            var bx = cx - bw / 2;
+            var by = cy - bh / 2;
+            var bodyCr = 2 * dpr;
+
+            ctx.beginPath();
+            ctx.moveTo(bx + bodyCr, by);
+            ctx.lineTo(bx + bw - bodyCr, by);
+            ctx.arcTo(bx + bw, by, bx + bw, by + bodyCr, bodyCr);
+            ctx.lineTo(bx + bw, by + bh - bodyCr);
+            ctx.arcTo(bx + bw, by + bh, bx + bw - bodyCr, by + bh, bodyCr);
+            ctx.lineTo(bx + bodyCr, by + bh);
+            ctx.arcTo(bx, by + bh, bx, by + bh - bodyCr, bodyCr);
+            ctx.lineTo(bx, by + bodyCr);
+            ctx.arcTo(bx, by, bx + bodyCr, by, bodyCr);
+            ctx.closePath();
+            ctx.stroke();
+
+            // 蓝色指示灯
+            ctx.fillStyle = '#3b82f6';
+            ctx.beginPath();
+            ctx.arc(cx, cy + bh * 0.1, 2 * dpr, 0, Math.PI * 2);
+            ctx.fill();
+
+        } else if (iconType === 'ibox') {
+            // 信息箱：箱体+顶盖+蓝色闪电
+            var bw = s * 1.6;
+            var bh = s * 1.4;
+            var bx = cx - bw / 2;
+            var by = cy - bh * 0.3;
+
+            // 顶盖（梯形）
+            ctx.beginPath();
+            ctx.moveTo(bx - s * 0.15, by);
+            ctx.lineTo(bx + bw + s * 0.15, by);
+            ctx.lineTo(bx + bw + s * 0.05, by - s * 0.4);
+            ctx.lineTo(bx - s * 0.05, by - s * 0.4);
+            ctx.closePath();
+            ctx.stroke();
+
+            // 箱体
+            var bodyCr = 2 * dpr;
+            ctx.beginPath();
+            ctx.moveTo(bx + bodyCr, by);
+            ctx.lineTo(bx + bw - bodyCr, by);
+            ctx.arcTo(bx + bw, by, bx + bw, by + bodyCr, bodyCr);
+            ctx.lineTo(bx + bw, by + bh - bodyCr);
+            ctx.arcTo(bx + bw, by + bh, bx + bw - bodyCr, by + bh, bodyCr);
+            ctx.lineTo(bx + bodyCr, by + bh);
+            ctx.arcTo(bx, by + bh, bx, by + bh - bodyCr, bodyCr);
+            ctx.lineTo(bx, by + bodyCr);
+            ctx.arcTo(bx, by, bx + bodyCr, by, bodyCr);
+            ctx.closePath();
+            ctx.stroke();
+
+            // 蓝色闪电
+            ctx.fillStyle = '#3b82f6';
+            var lx = cx;
+            var ly = by + bh * 0.25;
+            ctx.beginPath();
+            ctx.moveTo(lx - s * 0.15, ly);
+            ctx.lineTo(lx + s * 0.05, ly - s * 0.25);
+            ctx.lineTo(lx - s * 0.02, ly);
+            ctx.lineTo(lx + s * 0.15, ly + s * 0.25);
+            ctx.lineTo(lx - s * 0.05, ly);
+            ctx.closePath();
+            ctx.fill();
+        }
+        ctx.restore();
+
+        // 序号标签（白色半透明底）
+        if (showRemove) {
+            var labelY = cy + rh / 2 + 4 * dpr;
+            ctx.font = 'bold ' + (9 * dpr) + 'px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillStyle = 'rgba(0,0,0,0.55)';
+            ctx.fillText(dev.name, cx, labelY);
+        }
 
         // 右上角X移除按钮
         if (showRemove) {
-            var bx = cx + r * 0.72;
-            var by = cy - r * 0.72;
+            var bxr = cx + rw / 2 - 2 * dpr;
+            var byr = cy - rh / 2 + 2 * dpr;
             var br = 7 * dpr;
 
-            // X按钮背景
             ctx.beginPath();
-            ctx.arc(bx, by, br, 0, Math.PI * 2);
+            ctx.arc(bxr, byr, br, 0, Math.PI * 2);
             ctx.fillStyle = '#ff4444';
             ctx.fill();
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 1.5 * dpr;
             ctx.stroke();
 
-            // X叉号
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 1.8 * dpr;
             ctx.lineCap = 'round';
             var xs = br * 0.5;
             ctx.beginPath();
-            ctx.moveTo(bx - xs, by - xs);
-            ctx.lineTo(bx + xs, by + xs);
-            ctx.moveTo(bx + xs, by - xs);
-            ctx.lineTo(bx - xs, by + xs);
+            ctx.moveTo(bxr - xs, byr - xs);
+            ctx.lineTo(bxr + xs, byr + xs);
+            ctx.moveTo(bxr + xs, byr - xs);
+            ctx.lineTo(bxr - xs, byr + xs);
             ctx.stroke();
         }
     });
@@ -1673,7 +1923,7 @@ function initDrag() {
             var pd = placedDevices[i];
             var dx = (x * dpr) - (pd.x * canvas.width);
             var dy = (y * dpr) - (pd.y * canvas.height);
-            if (Math.sqrt(dx * dx + dy * dy) < 25 * dpr) {
+            if (Math.sqrt(dx * dx + dy * dy) < 30 * dpr) {
                 return i;
             }
         }
@@ -1799,7 +2049,7 @@ function initOptDrag() {
             var pd = _optDevices[i];
             var dx = (x * dpr) - (pd.x * canvas.width);
             var dy = (y * dpr) - (pd.y * canvas.height);
-            if (Math.sqrt(dx * dx + dy * dy) < 25 * dpr) {
+            if (Math.sqrt(dx * dx + dy * dy) < 30 * dpr) {
                 return i;
             }
         }
@@ -1808,14 +2058,15 @@ function initOptDrag() {
 
     function findRemoveButton(x, y) {
         var dpr = window.devicePixelRatio || 1;
+        var r = 16 * dpr;
+        var rw = r * 2.2;
         for (var i = _optDevices.length - 1; i >= 0; i--) {
             var pd = _optDevices[i];
             var cx = pd.x * canvas.width;
             var cy = pd.y * canvas.height;
-            var r = 18 * dpr;
-            var bx = cx + r * 0.72;
-            var by = cy - r * 0.72;
-            var br = 9 * dpr; // 稍大一点方便点击
+            var bx = cx + rw / 2 - 2 * dpr;
+            var by = cy - rw / 2 + 2 * dpr;
+            var br = 9 * dpr;
             var dx = (x * dpr) - bx;
             var dy = (y * dpr) - by;
             if (Math.sqrt(dx * dx + dy * dy) < br) {
@@ -1921,25 +2172,25 @@ function generateOptPlan() {
     } else if (area <= 100) {
         optDevices = [
             { id: 'optical', x: 0.15, y: 0.5 },
-            { id: 'wifi6',   x: 0.45, y: 0.35 },
-            { id: 'ap',      x: 0.75, y: 0.65 }
+            { id: 'subgw',   x: 0.45, y: 0.35 },
+            { id: 'subgw',   x: 0.75, y: 0.65 }
         ];
         baseOptCoverage = 96;
     } else if (area <= 150) {
         optDevices = [
             { id: 'optical', x: 0.1,  y: 0.5 },
-            { id: 'wifi6',   x: 0.35, y: 0.3 },
-            { id: 'ap',      x: 0.65, y: 0.4 },
-            { id: 'ap',      x: 0.5,  y: 0.75 }
+            { id: 'subgw',   x: 0.35, y: 0.3 },
+            { id: 'subgw',   x: 0.65, y: 0.4 },
+            { id: 'wifi6',   x: 0.5,  y: 0.75 }
         ];
         baseOptCoverage = 97;
     } else {
         optDevices = [
             { id: 'optical', x: 0.1,  y: 0.5 },
-            { id: 'wifi6',   x: 0.3,  y: 0.3 },
-            { id: 'ap',      x: 0.55, y: 0.35 },
-            { id: 'ap',      x: 0.7,  y: 0.65 },
-            { id: 'ap',      x: 0.35, y: 0.75 }
+            { id: 'subgw',   x: 0.3,  y: 0.3 },
+            { id: 'subgw',   x: 0.55, y: 0.35 },
+            { id: 'wifi6',   x: 0.7,  y: 0.65 },
+            { id: 'subgw',   x: 0.35, y: 0.75 }
         ];
         baseOptCoverage = 98;
     }
@@ -1958,7 +2209,7 @@ function generateOptPlan() {
             Object.keys(existingCounts).map(function(did) {
                 var dev = DEVICES.find(function(d) { return d.id === did; });
                 return '<div class="plan-card" style="opacity:0.7;">' +
-                    '<span class="p-icon">' + dev.icon + '</span>' +
+                    '<span class="p-icon">' + (dev.emoji || dev.icon) + '</span>' +
                     '<div class="p-info"><div class="p-name">' + dev.name + '</div><div class="p-desc">现有设备</div></div>' +
                     '<div class="p-count">x' + existingCounts[did] + '</div>' +
                     '</div>';
@@ -1993,7 +2244,7 @@ function generateOptPlan() {
         Object.keys(counts).map(function(did) {
             var dev = DEVICES.find(function(d) { return d.id === did; });
             return '<div class="plan-card">' +
-                '<span class="p-icon">' + dev.icon + '</span>' +
+                '<span class="p-icon">' + (dev.emoji || dev.icon) + '</span>' +
                 '<div class="p-info"><div class="p-name">' + dev.name + '</div><div class="p-desc">' + dev.desc + '</div></div>' +
                 '<div class="p-count">x' + counts[did] + '</div>' +
                 '</div>';
@@ -2013,14 +2264,20 @@ function generateOptPlan() {
 function renderOptAddDeviceList() {
     var list = document.getElementById('optAddDeviceList');
     if (!list) return;
-    // 排除wifi5（现有设备），其余设备都可添加
-    var addableDevices = DEVICES.filter(function(d) { return d.id !== 'wifi5'; });
+    // 按照截图要求，5个设备：子网关、WiFi7、WiFi6、万兆光猫、信息箱
+    var addableIds = ['subgw', 'wifi7', 'wifi6', 'optical', 'ibox'];
+    var addableDevices = addableIds.map(function(id) {
+        return DEVICES.find(function(d) { return d.id === id; });
+    }).filter(function(d) { return d; });
+
     list.innerHTML = addableDevices.map(function(d) {
         var placed = _optDevices.filter(function(p) { return p.id === d.id; });
-        return '<div class="device-item' + (placed.length > 0 ? ' placed' : '') + '" onclick="addOptDevice(\'' + d.id + '\')">' +
-            '<span class="device-icon">' + d.icon + '</span>' +
-            '<span>' + d.name + '</span>' +
-            (placed.length > 0 ? '<span style="color:#2b7de9;margin-left:4px;">x' + placed.length + '</span>' : '') +
+        var isPlaced = placed.length > 0;
+        return '<div class="device-bar-item' + (isPlaced ? ' placed' : '') + '" onclick="addOptDevice(\'' + d.id + '\')">' +
+            '<div class="device-bar-icon">' + (d.emoji || d.icon) + '</div>' +
+            '<div class="device-bar-name">' + d.name + '</div>' +
+            '<div class="device-bar-desc">' + d.desc + '</div>' +
+            (isPlaced ? '<div class="device-bar-count">x' + placed.length + '</div>' : '') +
             '</div>';
     }).join('');
 }
@@ -2062,7 +2319,7 @@ function renderReport() {
     planList.innerHTML = Object.keys(counts).map(function(did) {
         var dev = DEVICES.find(function(d) { return d.id === did; });
         return '<div class="plan-card">' +
-            '<span class="p-icon">' + dev.icon + '</span>' +
+            '<span class="p-icon">' + (dev.emoji || dev.icon) + '</span>' +
             '<div class="p-info"><div class="p-name">' + dev.name + '</div><div class="p-desc">' + dev.desc + '</div></div>' +
             '<div class="p-count">x' + counts[did] + '</div>' +
             '</div>';
