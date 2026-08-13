@@ -1837,10 +1837,10 @@ function drawHeatmap(canvasId, devices) {
     if (!devices || devices.length === 0) return;
     var walls = getWallSegments(canvasId);
     var colorStops = [
-        [230, 50, 50, 0.55],
-        [255, 140, 30, 0.45],
-        [240, 210, 20, 0.35],
-        [80, 190, 60, 0.22],
+        [80, 190, 60, 0.55],
+        [240, 210, 20, 0.45],
+        [255, 140, 30, 0.35],
+        [230, 50, 50, 0.22],
         [160, 150, 210, 0.14]
     ];
     var step = Math.max(3, Math.round(4 * dpr));
