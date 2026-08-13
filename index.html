@@ -1836,24 +1836,37 @@ function drawHeatmap(canvasId, devices) {
     ctx.clearRect(0, 0, w, h);
     if (!devices || devices.length === 0) return;
     var walls = getWallSegments(canvasId);
+
+    // 沈阳网站风格颜色：暖色=信号强，冷色=信号弱
+    // 红(强) → 橙 → 黄 → 绿 → 淡紫(弱)
     var colorStops = [
-        [80, 190, 60, 0.55],
-        [240, 210, 20, 0.45],
-        [255, 140, 30, 0.35],
-        [230, 50, 50, 0.22],
-        [160, 150, 210, 0.14]
+        [255, 80, 50, 0.50],    // 鲜红/橙红：信号最强
+        [255, 150, 40, 0.42],   // 橙色：信号良好
+        [240, 210, 40, 0.35],   // 明黄：信号一般
+        [70, 180, 80, 0.25],    // 绿色：信号较弱
+        [160, 150, 210, 0.16]   // 淡紫：信号极差
     ];
-    var step = Math.max(3, Math.round(4 * dpr));
-    var imgData = ctx.createImageData(w, h);
-    var data = imgData.data;
+
+    // 使用精细步长 + 径向渐变叠加实现平滑效果（匹配沈阳网站风格）
+    var step = Math.max(2, Math.round(3 * dpr));
     var wallSegments = walls.map(function(wl) {
         var dx = wl.x2 - wl.x1;
         var dy = wl.y2 - wl.y1;
         var len = Math.sqrt(dx * dx + dy * dy);
         return { x1: wl.x1, y1: wl.y1, x2: wl.x2, y2: wl.y2, dx: dx, dy: dy, len: len };
     });
-    for (var py = 0; py < h; py += step) {
-        for (var px = 0; px < w; px += step) {
+
+    // 先用低分辨率计算信号强度图，再用径向渐变平滑叠加
+    var gridStep = step;
+    var cols = Math.ceil(w / gridStep);
+    var rows = Math.ceil(h / gridStep);
+    var strengthMap = new Float32Array(cols * rows);
+    var hasSignal = new Uint8Array(cols * rows);
+
+    for (var gy = 0; gy < rows; gy++) {
+        for (var gx = 0; gx < cols; gx++) {
+            var px = gx * gridStep;
+            var py = gy * gridStep;
             var bestLevel = -1;
             for (var di = 0; di < devices.length; di++) {
                 var pd = devices[di];
@@ -1868,18 +1881,15 @@ function drawHeatmap(canvasId, devices) {
                 var maxDist = dev.range * dpr * diag / 38;
                 if (dist > maxDist) continue;
                 var wallCount = 0;
-                var rayDx = ddx;
-                var rayDy = ddy;
-                var rayLen = dist;
-                if (rayLen > 0) {
+                if (dist > 0) {
                     for (var wi = 0; wi < wallSegments.length; wi++) {
                         var ws = wallSegments[wi];
                         if (ws.len < 1) continue;
                         var sdx = ws.dx, sdy = ws.dy;
-                        var denom = rayDx * sdy - rayDy * sdx;
+                        var denom = ddx * sdy - ddy * sdx;
                         if (Math.abs(denom) < 0.001) continue;
                         var t = ((ws.x1 - cx) * sdy - (ws.y1 - cy) * sdx) / denom;
-                        var u = ((ws.x1 - cx) * rayDy - (ws.y1 - cy) * rayDx) / denom;
+                        var u = ((ws.x1 - cx) * ddy - (ws.y1 - cy) * ddx) / denom;
                         if (t > 0.01 && t < 0.99 && u > 0 && u < 1) {
                             wallCount++;
                         }
@@ -1898,21 +1908,37 @@ function drawHeatmap(canvasId, devices) {
                     bestLevel = finalLevel;
                 }
             }
-            if (bestLevel >= 0 && bestLevel < colorStops.length) {
-                var cs = colorStops[bestLevel];
-                for (var sy = 0; sy < step && (py + sy) < h; sy++) {
-                    for (var sx = 0; sx < step && (px + sx) < w; sx++) {
-                        var idx = ((py + sy) * w + (px + sx)) * 4;
-                        data[idx] = cs[0];
-                        data[idx + 1] = cs[1];
-                        data[idx + 2] = cs[2];
-                        data[idx + 3] = cs[3] * 255;
-                    }
-                }
+            if (bestLevel >= 0) {
+                strengthMap[gy * cols + gx] = bestLevel;
+                hasSignal[gy * cols + gx] = 1;
             }
         }
     }
-    ctx.putImageData(imgData, 0, 0);
+
+    // 用径向渐变方式绘制，实现平滑过渡效果
+    ctx.globalCompositeOperation = 'source-over';
+    for (var gy = 0; gy < rows; gy++) {
+        for (var gx = 0; gx < cols; gx++) {
+            if (!hasSignal[gy * cols + gx]) continue;
+            var level = Math.round(strengthMap[gy * cols + gx]);
+            if (level < 0 || level >= colorStops.length) continue;
+            var cs = colorStops[level];
+            var cx = gx * gridStep;
+            var cy = gy * gridStep;
+            // 每个点绘制一个柔和的径向渐变圆
+            var radius = gridStep * 1.8;
+            var grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+            var innerColor = 'rgba(' + cs[0] + ',' + cs[1] + ',' + cs[2] + ',' + cs[3] + ')';
+            var outerColor = 'rgba(' + cs[0] + ',' + cs[1] + ',' + cs[2] + ',0)';
+            grad.addColorStop(0, innerColor);
+            grad.addColorStop(1, outerColor);
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    ctx.globalCompositeOperation = 'source-over';
 }
 
 // ============ 墙体线段提取 ============
