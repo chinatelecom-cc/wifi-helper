@@ -1837,21 +1837,64 @@ function drawHeatmap(canvasId, devices) {
     if (!devices || devices.length === 0) return;
     var walls = getWallSegments(canvasId);
 
-    // 沈阳网站风格颜色：暖色=信号强，冷色=信号弱，6色渐变
-    // 红(强) → 橙红 → 橙 → 黄 → 黄绿 → 绿 → 淡紫(弱)
-    var colorStops = [
-        [255, 60, 40, 0.55],     // 鲜红：信号最强
-        [255, 100, 30, 0.50],    // 橙红：信号很强
-        [255, 160, 40, 0.45],    // 橙色：信号较强
-        [250, 220, 50, 0.40],    // 明黄：信号中等
-        [180, 220, 60, 0.35],    // 黄绿：信号一般
-        [60, 190, 80, 0.28],     // 绿色：信号较弱
-        [160, 150, 210, 0.20]    // 淡紫：信号极差
+    // ===== 沈阳网站完全相同的热力图算法（heatmap.js） =====
+    // 第一步：生成256色色条（与沈阳网站完全一致的渐变定义）
+    // offset 1.0 → 红色rgb(255,0,0)  信号最强
+    // offset 0.85 → 黄色              信号强
+    // offset 0.55 → 绿色rgb(0,255,0)  信号中等
+    // offset 0.25 → 蓝色rgb(0,0,255)  信号弱
+    // offset 0    → 白色              信号极弱
+    var gradientStops = [
+        { offset: 1.0,  color: [255, 0, 0] },     // 红
+        { offset: 0.85, color: [255, 255, 0] },   // 黄
+        { offset: 0.55, color: [0, 255, 0] },     // 绿
+        { offset: 0.25, color: [0, 0, 255] },     // 蓝
+        { offset: 0.0,  color: [255, 255, 255] }  // 白
     ];
-    var maxLevel = colorStops.length - 1;
+    // 生成256色调色板
+    var palette = new Uint8ClampedArray(256 * 4);
+    for (var i = 0; i < 256; i++) {
+        var t = i / 255;
+        var c = [0, 0, 0];
+        for (var s = 0; s < gradientStops.length - 1; s++) {
+            var s0 = gradientStops[s];
+            var s1 = gradientStops[s + 1];
+            if (t <= s0.offset && t >= s1.offset) {
+                var range = s0.offset - s1.offset;
+                var localT = range > 0 ? (t - s1.offset) / range : 0;
+                c[0] = Math.round(s1.color[0] + (s0.color[0] - s1.color[0]) * localT);
+                c[1] = Math.round(s1.color[1] + (s0.color[1] - s1.color[1]) * localT);
+                c[2] = Math.round(s1.color[2] + (s0.color[2] - s1.color[2]) * localT);
+                break;
+            }
+        }
+        palette[i * 4] = c[0];
+        palette[i * 4 + 1] = c[1];
+        palette[i * 4 + 2] = c[2];
+        palette[i * 4 + 3] = 255;
+    }
 
-    // 使用精细步长 + 径向渐变叠加实现平滑效果（匹配沈阳网站风格）
-    var step = Math.max(2, Math.round(3 * dpr));
+    // 第二步：在离屏canvas上绘制alpha通道图（径向渐变黑点叠加）
+    var pointRadius = Math.round(6 * dpr);
+    var pointDiameter = pointRadius * 2;
+    // 预渲染单个点的径向渐变模板（与沈阳完全一致：中心黑→边缘透明）
+    var spotCanvas = document.createElement('canvas');
+    spotCanvas.width = pointDiameter;
+    spotCanvas.height = pointDiameter;
+    var spotCtx = spotCanvas.getContext('2d');
+    var spotGrad = spotCtx.createRadialGradient(pointRadius, pointRadius, Math.round(pointRadius * 0.45), pointRadius, pointRadius, pointRadius);
+    spotGrad.addColorStop(0, 'rgba(0,0,0,1)');
+    spotGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    spotCtx.fillStyle = spotGrad;
+    spotCtx.fillRect(0, 0, pointDiameter, pointDiameter);
+
+    // 离屏alpha canvas
+    var alphaCanvas = document.createElement('canvas');
+    alphaCanvas.width = w;
+    alphaCanvas.height = h;
+    var alphaCtx = alphaCanvas.getContext('2d');
+
+    // 计算信号强度并绘制alpha点
     var wallSegments = walls.map(function(wl) {
         var dx = wl.x2 - wl.x1;
         var dy = wl.y2 - wl.y1;
@@ -1859,30 +1902,24 @@ function drawHeatmap(canvasId, devices) {
         return { x1: wl.x1, y1: wl.y1, x2: wl.x2, y2: wl.y2, dx: dx, dy: dy, len: len };
     });
 
-    // 先用低分辨率计算信号强度图，再用径向渐变平滑叠加
-    var gridStep = step;
-    var cols = Math.ceil(w / gridStep);
-    var rows = Math.ceil(h / gridStep);
-    var strengthMap = new Float32Array(cols * rows);
-    var hasSignal = new Uint8Array(cols * rows);
+    for (var di = 0; di < devices.length; di++) {
+        var pd = devices[di];
+        var dev = DEVICES.find(function(d) { return d.id === pd.id; });
+        if (!dev || dev.range <= 0) continue;
+        var devCx = pd.x * w;
+        var devCy = pd.y * h;
+        var diag = Math.sqrt(w * w + h * h);
+        var maxDist = dev.range * dpr * diag / 28;
+        var step = Math.max(3, Math.round(4 * dpr));
 
-    for (var gy = 0; gy < rows; gy++) {
-        for (var gx = 0; gx < cols; gx++) {
-            var px = gx * gridStep;
-            var py = gy * gridStep;
-            var bestLevel = -1;
-            for (var di = 0; di < devices.length; di++) {
-                var pd = devices[di];
-                var dev = DEVICES.find(function(d) { return d.id === pd.id; });
-                if (!dev || dev.range <= 0) continue;
-                var cx = pd.x * w;
-                var cy = pd.y * h;
-                var ddx = px - cx;
-                var ddy = py - cy;
+        for (var py = 0; py < h; py += step) {
+            for (var px = 0; px < w; px += step) {
+                var ddx = px - devCx;
+                var ddy = py - devCy;
                 var dist = Math.sqrt(ddx * ddx + ddy * ddy);
-                var diag = Math.sqrt(w * w + h * h);
-                var maxDist = dev.range * dpr * diag / 28;
                 if (dist > maxDist) continue;
+
+                // 穿墙检测
                 var wallCount = 0;
                 if (dist > 0) {
                     for (var wi = 0; wi < wallSegments.length; wi++) {
@@ -1891,60 +1928,45 @@ function drawHeatmap(canvasId, devices) {
                         var sdx = ws.dx, sdy = ws.dy;
                         var denom = ddx * sdy - ddy * sdx;
                         if (Math.abs(denom) < 0.001) continue;
-                        var t = ((ws.x1 - cx) * sdy - (ws.y1 - cy) * sdx) / denom;
-                        var u = ((ws.x1 - cx) * ddy - (ws.y1 - cy) * ddx) / denom;
+                        var t = ((ws.x1 - devCx) * sdy - (ws.y1 - devCy) * sdx) / denom;
+                        var u = ((ws.x1 - devCx) * ddy - (ws.y1 - devCy) * ddx) / denom;
                         if (t > 0.01 && t < 0.99 && u > 0 && u < 1) {
                             wallCount++;
                         }
                     }
                 }
-                var distRatio = dist / maxDist;
-                var baseLevel;
-                if (distRatio < 0.12) baseLevel = 0;
-                else if (distRatio < 0.25) baseLevel = 1;
-                else if (distRatio < 0.40) baseLevel = 2;
-                else if (distRatio < 0.55) baseLevel = 3;
-                else if (distRatio < 0.70) baseLevel = 4;
-                else if (distRatio < 0.88) baseLevel = 5;
-                else baseLevel = 6;
-                var finalLevel = baseLevel + wallCount;
-                if (finalLevel > maxLevel) finalLevel = maxLevel;
-                if (bestLevel < 0 || finalLevel < bestLevel) {
-                    bestLevel = finalLevel;
-                }
-            }
-            if (bestLevel >= 0) {
-                strengthMap[gy * cols + gx] = bestLevel;
-                hasSignal[gy * cols + gx] = 1;
-            }
-        }
-    }
 
-    // 用径向渐变方式绘制，实现平滑过渡效果
-    ctx.globalCompositeOperation = 'source-over';
-    for (var gy = 0; gy < rows; gy++) {
-        for (var gx = 0; gx < cols; gx++) {
-            if (!hasSignal[gy * cols + gx]) continue;
-            var level = Math.round(strengthMap[gy * cols + gx]);
-            if (level < 0 || level >= colorStops.length) continue;
-            var cs = colorStops[level];
-            var cx = gx * gridStep;
-            var cy = gy * gridStep;
-            // 每个点绘制一个柔和的径向渐变圆，半径增大使过渡更平滑
-            var radius = gridStep * 2.5;
-            var grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-            var innerColor = 'rgba(' + cs[0] + ',' + cs[1] + ',' + cs[2] + ',' + cs[3] + ')';
-            var outerColor = 'rgba(' + cs[0] + ',' + cs[1] + ',' + cs[2] + ',0)';
-            grad.addColorStop(0, innerColor);
-            grad.addColorStop(1, outerColor);
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-            ctx.fill();
+                var distRatio = dist / maxDist;
+                // 穿墙衰减
+                var wallPenalty = wallCount * 0.15;
+                var strength = (1 - distRatio) * (1 - wallPenalty);
+                if (strength <= 0) continue;
+
+                // 绘制alpha点
+                alphaCtx.globalAlpha = strength;
+                alphaCtx.drawImage(spotCanvas, px - pointRadius, py - pointRadius);
+            }
         }
     }
-    ctx.globalCompositeOperation = 'source-over';
+    alphaCtx.globalAlpha = 1;
+
+    // 第三步：读取alpha值，用色条查找颜色，生成最终热力图
+    var alphaData = alphaCtx.getImageData(0, 0, w, h);
+    var aData = alphaData.data;
+    var finalImgData = ctx.createImageData(w, h);
+    var fData = finalImgData.data;
+    for (var i = 0; i < aData.length; i += 4) {
+        var alpha = aData[i + 3]; // alpha通道值 0-255
+        if (alpha === 0) continue;
+        var paletteIdx = alpha * 4;
+        fData[i]     = palette[paletteIdx];     // R
+        fData[i + 1] = palette[paletteIdx + 1]; // G
+        fData[i + 2] = palette[paletteIdx + 2]; // B
+        fData[i + 3] = Math.min(255, alpha * 0.75); // 最终透明度
+    }
+    ctx.putImageData(finalImgData, 0, 0);
 }
+
 
 // ============ 墙体线段提取 ============
 function getWallSegments(canvasId) {
