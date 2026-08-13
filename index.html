@@ -1,88 +1,197 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>全光WiFi服务助手 - 长春电信朝阳区局</title>
+    <title>全光WiFi服务助手 - 中国电信长春分公司</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
-            background: #f5f7fa;
-            color: #333;
+            background: #F5F6F8;
+            color: #333333;
             min-height: 100vh;
             max-width: 480px;
             margin: 0 auto;
             position: relative;
         }
 
-        /* 步骤导航 */
+        /* 步骤导航栏 */
         .step-nav {
             display: flex;
             background: #fff;
             padding: 12px 16px;
             gap: 8px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
             position: sticky;
             top: 0;
             z-index: 100;
         }
         .step-item {
-            flex: 1;
             text-align: center;
-            padding: 8px 4px;
-            border-radius: 20px;
+            padding: 6px 12px;
+            border-radius: 16px;
             font-size: 13px;
-            color: #999;
-            background: #f0f2f5;
+            color: #666666;
+            background: #F2F3F5;
             transition: all 0.3s;
             white-space: nowrap;
         }
-        .step-item.active { background: #2b7de9; color: #fff; }
-        .step-item.done { background: #e8f4ff; color: #2b7de9; }
+        .step-item.active { background: #4080FF; color: #fff; }
+        .step-item.done { background: #E8F0FF; color: #4080FF; }
 
         /* 页面容器 */
-        .page { display: none; padding: 16px; }
+        .page { display: none; padding: 0 16px; }
         .page.active { display: block; }
+        .page.no-nav { padding: 0; }
 
-        /* 户型分类标签 */
+        /* 二级标签（实际户型图/标准户型图） */
+        .sub-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 28px;
+            padding: 16px 0 12px;
+            background: #fff;
+        }
+        .sub-tab {
+            font-size: 15px;
+            color: #666;
+            padding-bottom: 8px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .sub-tab.active { color: #4080FF; font-weight: 600; }
+        .sub-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 24px; height: 2px;
+            background: #4080FF;
+            border-radius: 1px;
+        }
+
+        /* 搜索栏 */
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: #ECECEF;
+            border-radius: 20px;
+            height: 40px;
+            padding: 0 14px;
+            margin: 0 16px 16px;
+        }
+        .search-city {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .search-divider {
+            width: 1px; height: 18px;
+            background: #ccc;
+            margin: 0 10px;
+        }
+        .search-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            color: #333;
+            outline: none;
+        }
+        .search-input::placeholder { color: #999; }
+
+        /* 居室筛选标签 */
         .room-tabs {
             display: flex;
-            background: #fff;
-            border-radius: 12px;
-            padding: 4px;
-            margin-bottom: 16px;
+            padding: 0 16px 16px;
+            gap: 36px;
             overflow-x: auto;
+            background: #fff;
         }
         .room-tab {
-            flex: 1; min-width: 0;
-            text-align: center; padding: 10px 6px;
-            font-size: 13px; color: #666;
-            border-radius: 8px; cursor: pointer;
-            white-space: nowrap; transition: all 0.2s;
+            text-align: center;
+            font-size: 15px;
+            color: #666;
+            cursor: pointer;
+            padding-bottom: 8px;
+            position: relative;
+            white-space: nowrap;
+            transition: all 0.2s;
         }
-        .room-tab.active { background: #2b7de9; color: #fff; }
+        .room-tab.active {
+            color: #F53F3F;
+            font-weight: 600;
+        }
+        .room-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 20px; height: 2px;
+            background: #F53F3F;
+            border-radius: 1px;
+        }
 
         /* 户型卡片网格 */
-        .house-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .house-card {
-            background: #fff; border-radius: 12px; padding: 12px;
-            text-align: center; cursor: pointer; transition: all 0.2s;
-            border: 2px solid transparent; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        .house-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 16px 0;
         }
-        .house-card:hover { border-color: #2b7de9; transform: translateY(-1px); }
+        .house-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            position: relative;
+        }
         .house-card:active { transform: scale(0.97); }
-        .house-card.selected { border-color: #2b7de9; background: #f0f7ff; }
-        .house-card svg, .house-card img { width: 80px; height: auto; margin: 0 auto 8px; display: block; }
-        .house-card .name { font-size: 14px; font-weight: 500; }
+        .house-card.selected {
+            border-color: #4080FF;
+        }
+        .house-card.selected::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 0; height: 0;
+            border-top: 24px solid #4080FF;
+            border-left: 24px solid transparent;
+        }
+        .house-card.selected::before {
+            content: '\2713';
+            position: absolute;
+            top: 1px; right: 3px;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            z-index: 1;
+        }
+        .house-card svg, .house-card img {
+            width: 80px; height: auto; margin: 0 auto 8px; display: block;
+        }
+        .house-card .name { font-size: 14px; font-weight: 500; color: #333; }
         .house-card .area { font-size: 12px; color: #999; margin-top: 2px; }
 
         /* 组网页面 */
-        .network-page { background: #fff; border-radius: 16px; padding: 16px; min-height: 400px; }
+        .network-page {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+        }
         .floorplan-container {
             position: relative;
             background: #fafafa;
-            border-radius: 12px;
+            border-radius: 8px;
             overflow: hidden;
             margin-bottom: 16px;
             touch-action: none;
@@ -103,36 +212,72 @@
         .floorplan-container canvas.interactive {
             pointer-events: auto;
         }
+
+        /* 覆盖率区域 */
         .coverage-info {
-            display: flex; align-items: center; gap: 8px;
-            font-size: 14px; color: #666; margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 16px;
         }
-        .coverage-bar { flex: 1; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
+        .coverage-icon {
+            width: 20px; height: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+        }
+        .coverage-bar {
+            flex: 1;
+            height: 6px;
+            background: #eee;
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
         .coverage-fill {
             height: 100%;
-            background: linear-gradient(90deg, #ff6b6b, #ffd93d, #51cf66);
-            border-radius: 4px; transition: width 0.5s;
+            background: linear-gradient(90deg, #00E676, #AEEA00, #FFEB3B, #FF9800, #F44336);
+            border-radius: 3px;
+            transition: width 0.5s;
+            position: relative;
+        }
+        .coverage-fill::after {
+            content: '';
+            position: absolute;
+            right: -8px; top: 50%;
+            transform: translateY(-50%);
+            width: 16px; height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .coverage-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            min-width: 40px;
+            text-align: right;
+        }
+        .coverage-eval {
+            font-size: 12px;
+            color: #999;
+            margin-left: 4px;
+        }
+
+        /* 提示文字 */
+        .drag-hint {
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
         }
 
         /* 设备面板 */
         .device-panel { margin-top: 16px; }
         .device-panel h3 { font-size: 14px; color: #666; margin-bottom: 12px; }
-        .device-list { display: flex; flex-wrap: wrap; gap: 8px; }
-        .device-item {
-            display: flex; align-items: center; gap: 6px;
-            padding: 8px 12px; background: #f5f7fa; border-radius: 8px;
-            font-size: 13px; cursor: pointer; transition: all 0.2s;
-            border: 1px solid transparent;
-        }
-        .device-item:hover { border-color: #2b7de9; }
-        .device-item.placed { background: #e8f4ff; border-color: #2b7de9; }
-        .device-icon {
-            width: 24px; height: 24px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 16px;
-        }
 
-        /* 底部设备横向列表（参照沈阳网站） */
+        /* 底部设备横向列表 */
         .device-bar {
             display: flex;
             justify-content: space-around;
@@ -151,16 +296,16 @@
         }
         .device-bar-item:active { transform: scale(0.95); }
         .device-bar-icon {
-            width: 40px; height: 40px;
-            background: #f5f7fa;
-            border-radius: 10px;
+            width: 44px; height: 44px;
+            background: #fff;
+            border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 20px;
-            border: 1.5px solid #e8e8e8;
+            font-size: 22px;
+            border: 1px solid #EEEEEE;
         }
         .device-bar-item.placed .device-bar-icon {
-            border-color: #2b7de9;
-            background: #e8f4ff;
+            border-color: #4080FF;
+            background: #E8F0FF;
         }
         .device-bar-name {
             font-size: 12px;
@@ -177,55 +322,164 @@
         }
         .device-bar-count {
             font-size: 10px;
-            color: #2b7de9;
+            color: #4080FF;
             font-weight: 500;
         }
 
-        /* 提示文字 */
-        .drag-hint {
-            text-align: center; font-size: 12px; color: #999;
-            margin-top: 8px; font-style: italic;
-        }
-
         /* 按钮 */
-        .btn-group { display: flex; gap: 12px; margin-top: 24px; }
+        .btn-group {
+            display: flex;
+            gap: 16px;
+            margin-top: 24px;
+            padding-bottom: 20px;
+        }
         .btn {
-            flex: 1; padding: 14px; border-radius: 12px;
-            font-size: 15px; font-weight: 500; text-align: center;
-            cursor: pointer; border: none; transition: all 0.2s;
+            flex: 1;
+            padding: 0;
+            border-radius: 22px;
+            height: 44px;
+            line-height: 44px;
+            font-size: 15px;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
         }
         .btn:active { transform: scale(0.97); }
-        .btn-outline { background: #fff; color: #2b7de9; border: 1.5px solid #2b7de9; }
-        .btn-primary { background: #2b7de9; color: #fff; }
-        .btn-primary:hover { background: #1a6ad8; }
+        .btn-outline {
+            background: #fff;
+            color: #4080FF;
+            border: 1.5px solid #4080FF;
+        }
+        .btn-primary {
+            background: #4080FF;
+            color: #fff;
+        }
 
         /* 报告页面 */
-        .report-section { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
-        .report-section h3 { font-size: 15px; margin-bottom: 12px; color: #2b7de9; }
+        .report-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            margin-top: 16px;
+        }
+        .report-section h3 {
+            font-size: 15px;
+            margin-bottom: 12px;
+            color: #333;
+        }
         .report-item {
-            display: flex; justify-content: space-between;
-            padding: 10px 0; border-bottom: 1px solid #f0f2f5; font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f2f5;
+            font-size: 14px;
         }
         .report-item:last-child { border-bottom: none; }
         .report-item .label { color: #666; }
         .report-item .value { color: #333; font-weight: 500; }
 
+        /* 提示区域 */
+        .report-tip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #E8F0FF;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 16px 0;
+            position: relative;
+        }
+        .report-tip-icon {
+            width: 20px; height: 20px;
+            background: #4080FF;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 12px; font-weight: 700;
+            flex-shrink: 0;
+        }
+        .report-tip-text {
+            flex: 1;
+            font-size: 13px;
+            color: #4080FF;
+        }
+        .report-tag {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+        .report-tag.green { background: #E8F9E8; color: #00B42A; }
+        .report-tag.gray { background: #F2F3F5; color: #999; }
+
+        /* 优化前后对比 */
+        .compare-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .compare-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* FTTR推荐 */
+        .fttr-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #E8F0FF;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin: 16px 0;
+        }
+        .fttr-icon {
+            width: 24px; height: 24px;
+            background: #4080FF;
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 14px;
+            flex-shrink: 0;
+        }
+        .fttr-text {
+            flex: 1;
+            font-size: 13px;
+            color: #4080FF;
+        }
+
         /* 首页 */
         .landing-hero {
             position: relative;
-            background: linear-gradient(135deg, #1a3a5c 0%, #2b7de9 100%);
-            border-radius: 16px; padding: 40px 24px;
-            text-align: center; color: #fff;
-            margin-bottom: 24px; overflow: hidden;
+            background: linear-gradient(135deg, #1a3a5c 0%, #4080FF 100%);
+            border-radius: 16px;
+            padding: 40px 24px;
+            text-align: center;
+            color: #fff;
+            margin-bottom: 24px;
+            overflow: hidden;
         }
         .landing-hero::before {
-            content: ''; position: absolute; top: -30px; right: -30px;
-            width: 120px; height: 120px; border-radius: 50%;
+            content: '';
+            position: absolute;
+            top: -30px; right: -30px;
+            width: 120px; height: 120px;
+            border-radius: 50%;
             background: rgba(255,255,255,0.08);
         }
         .landing-hero::after {
-            content: ''; position: absolute; bottom: -40px; left: -20px;
-            width: 100px; height: 100px; border-radius: 50%;
+            content: '';
+            position: absolute;
+            bottom: -40px; left: -20px;
+            width: 100px; height: 100px;
+            border-radius: 50%;
             background: rgba(255,255,255,0.05);
         }
         .landing-hero h1 { font-size: 24px; margin-bottom: 4px; position: relative; z-index: 1; }
@@ -237,11 +491,17 @@
             font-size: 24px; position: relative; z-index: 1;
         }
         .enter-btn {
-            display: inline-block; padding: 12px 48px;
-            border: 1px solid rgba(255,255,255,0.5); border-radius: 24px;
-            color: #fff; font-size: 15px; cursor: pointer;
-            transition: all 0.2s; background: rgba(255,255,255,0.1);
-            position: relative; z-index: 1;
+            display: inline-block;
+            padding: 12px 48px;
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 24px;
+            color: #fff;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: rgba(255,255,255,0.1);
+            position: relative;
+            z-index: 1;
         }
         .enter-btn:hover { background: rgba(255,255,255,0.2); }
         .enter-btn.detection {
@@ -250,82 +510,101 @@
             border-color: rgba(255,255,255,0.3);
             font-size: 14px;
         }
-
         .features {
-            display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 12px; margin-bottom: 24px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
         }
         .feature-item {
-            text-align: center; padding: 16px 8px;
-            background: #fff; border-radius: 12px;
+            text-align: center;
+            padding: 16px 8px;
+            background: #fff;
+            border-radius: 12px;
         }
         .feature-item .icon { font-size: 24px; margin-bottom: 6px; }
         .feature-item .text { font-size: 12px; color: #666; }
+        .cc-brand { text-align: center; padding: 12px; font-size: 11px; color: #999; }
 
         /* 方案卡片 */
         .plan-card {
-            display: flex; align-items: center; gap: 12px;
-            padding: 12px; background: #f5f7fa; border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #F5F6F8;
+            border-radius: 10px;
             margin-bottom: 8px;
         }
         .plan-card .p-icon { font-size: 28px; }
         .plan-card .p-info { flex: 1; }
         .plan-card .p-name { font-size: 14px; font-weight: 500; }
         .plan-card .p-desc { font-size: 12px; color: #999; margin-top: 2px; }
-        .plan-card .p-count { font-size: 14px; color: #2b7de9; font-weight: 500; }
-
-        .cc-brand { text-align: center; padding: 12px; font-size: 11px; color: #999; }
+        .plan-card .p-count { font-size: 14px; color: #4080FF; font-weight: 500; }
 
         /* toast */
         .toast {
-            position: fixed; bottom: 80px; left: 50%;
-            transform: translateX(-50%); background: rgba(0,0,0,0.75);
-            color: #fff; padding: 10px 24px; border-radius: 20px;
-            font-size: 13px; z-index: 1000; opacity: 0;
-            transition: opacity 0.3s; white-space: nowrap;
+            position: fixed;
+            bottom: 80px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.75);
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-size: 13px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
         }
         .toast.show { opacity: 1; }
 
         /* ============ 网络检测模块 ============ */
         .detect-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
             margin-top: 16px;
         }
         .detect-grid-item {
-            background: #fff; border-radius: 12px; padding: 20px 12px;
-            text-align: center; cursor: pointer; transition: all 0.2s;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06); border: 1.5px solid transparent;
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            border: 1.5px solid transparent;
         }
-        .detect-grid-item:hover { border-color: #2b7de9; }
+        .detect-grid-item:hover { border-color: #4080FF; }
         .detect-grid-item:active { transform: scale(0.97); }
         .detect-grid-item .dgi-icon { font-size: 28px; margin-bottom: 6px; }
         .detect-grid-item .dgi-name { font-size: 14px; font-weight: 500; color: #333; }
 
-        .detect-speed-result {
-            text-align: center; padding: 24px 0;
-        }
-        .detect-speed-result .big-num {
-            font-size: 48px; font-weight: 700; color: #2b7de9; line-height: 1.1;
-        }
-        .detect-speed-result .big-unit {
-            font-size: 14px; color: #999; margin-top: 2px;
-        }
-        .detect-speed-result .big-label {
-            font-size: 13px; color: #666; margin-top: 4px;
-        }
         .speed-duo {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
         }
         .speed-duo-item {
-            background: #f8fafe; border-radius: 12px; padding: 16px 8px; text-align: center;
+            background: #f8fafe;
+            border-radius: 12px;
+            padding: 16px 8px;
+            text-align: center;
         }
-        .speed-duo-item .num { font-size: 32px; font-weight: 700; color: #2b7de9; }
+        .speed-duo-item .num { font-size: 32px; font-weight: 700; color: #4080FF; }
+        .speed-duo-item .num.good { color: #00B42A; }
+        .speed-duo-item .num.ok { color: #FF9800; }
+        .speed-duo-item .num.bad { color: #F53F3F; }
         .speed-duo-item .unit { font-size: 12px; color: #999; }
         .speed-duo-item .label { font-size: 13px; color: #666; margin-top: 4px; }
 
         .detect-card {
-            background: #fff; border-radius: 12px; padding: 16px;
-            margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
         }
         .detect-card h3 {
             font-size: 15px; color: #333; margin-bottom: 12px;
@@ -338,26 +617,18 @@
         .detect-row:last-child { border-bottom: none; }
         .detect-row .label { color: #666; }
         .detect-row .value { font-weight: 600; }
-        .detect-row .value.good { color: #51cf66; }
-        .detect-row .value.ok { color: #f0a020; }
-        .detect-row .value.bad { color: #ff6b6b; }
+        .detect-row .value.good { color: #00B42A; }
+        .detect-row .value.ok { color: #FF9800; }
+        .detect-row .value.bad { color: #F53F3F; }
 
         .test-progress {
             height: 6px; background: #f0f2f5; border-radius: 3px;
             overflow: hidden; margin-top: 8px;
         }
         .test-progress-bar {
-            height: 100%; background: #2b7de9; border-radius: 3px;
+            height: 100%; background: #4080FF; border-radius: 3px;
             transition: width 0.3s; width: 0%;
         }
-
-        .game-tag {
-            display: inline-block; padding: 3px 10px; border-radius: 12px;
-            font-size: 12px; margin: 2px;
-        }
-        .game-tag.green { background: #e8f9e8; color: #51cf66; }
-        .game-tag.yellow { background: #fff8e8; color: #f0a020; }
-        .game-tag.red { background: #fde8e8; color: #ff6b6b; }
 
         .detect-status {
             text-align: center; padding: 24px 16px;
@@ -372,9 +643,9 @@
         .app-list-item:last-child { border-bottom: none; }
         .app-list-item .app-name { color: #333; font-weight: 500; }
         .app-list-item .app-delay { font-weight: 600; }
-        .app-list-item .app-delay.good { color: #51cf66; }
-        .app-list-item .app-delay.ok { color: #f0a020; }
-        .app-list-item .app-delay.bad { color: #ff6b6b; }
+        .app-list-item .app-delay.good { color: #00B42A; }
+        .app-list-item .app-delay.ok { color: #FF9800; }
+        .app-list-item .app-delay.bad { color: #F53F3F; }
     </style>
 </head>
 <body>
@@ -382,21 +653,21 @@
 <!-- 落地页 -->
 <div id="landingPage" class="page active">
     <div class="landing-hero">
-        <div class="wifi-icon">📶</div>
+        <div class="wifi-icon">📡</div>
         <h1>全光WiFi服务助手</h1>
-        <div class="brand">中国电信 · 长春分公司 · 朝阳区局</div>
+        <div class="brand">中国电信 · 长春分公司 · 硅谷大街</div>
         <div class="enter-btn" onclick="goToStep(0)">WiFi组网</div>
         <div class="enter-btn detection" onclick="goToDetection()">检测工具</div>
     </div>
     <div class="features">
-        <div class="feature-item"><div class="icon">🏠</div><div class="text">标准户型选择</div></div>
-        <div class="feature-item"><div class="icon">📡</div><div class="text">智能组网方案</div></div>
-        <div class="feature-item"><div class="icon">📊</div><div class="text">覆盖效果评估</div></div>
+        <div class="feature-item"><div class="icon">🏠</div><div class="text">精准户型选择</div></div>
+        <div class="feature-item"><div class="icon">📶</div><div class="text">智能组网优化</div></div>
+        <div class="feature-item"><div class="icon">📊</div><div class="text">直观效果对比</div></div>
     </div>
     <div class="cc-brand"></div>
 </div>
 
-<!-- 网络检测页 -->
+<!-- 检测工具页 -->
 <div id="detectionPage" class="page">
     <div class="step-nav">
         <div class="step-item active">检测工具</div>
@@ -404,8 +675,8 @@
     <!-- 检测首页 -->
     <div id="detectHome">
         <div class="detect-card" style="text-align:center;padding:20px 16px;">
-            <div class="btn btn-primary" style="max-width:220px;margin:0 auto;font-size:16px;padding:14px 0;" onclick="runSpeedTest()">一键测速</div>
-            <p style="font-size:12px;color:#999;margin-top:8px;">测试下载与上传速度</p>
+            <div class="btn btn-primary" style="max-width:220px;margin:0 auto;font-size:16px;height:44px;line-height:44px;" onclick="runSpeedTest()">一键测速</div>
+            <p style="font-size:12px;color:#999;margin-top:8px;">测试下载和上传速度</p>
         </div>
         <div class="detect-grid">
             <div class="detect-grid-item" onclick="runWifiDetect()">
@@ -413,7 +684,7 @@
                 <div class="dgi-name">WiFi信号检测</div>
             </div>
             <div class="detect-grid-item" onclick="runPingDetect()">
-                <div class="dgi-icon">📡</div>
+                <div class="dgi-icon">⚡</div>
                 <div class="dgi-name">Ping检测</div>
             </div>
             <div class="detect-grid-item" onclick="runGameDetect()">
@@ -421,12 +692,12 @@
                 <div class="dgi-name">游戏测速</div>
             </div>
             <div class="detect-grid-item" onclick="runVideoDetect()">
-                <div class="dgi-icon">🎬</div>
+                <div class="dgi-icon">📺</div>
                 <div class="dgi-name">视频测速</div>
             </div>
         </div>
     </div>
-    <!-- 检测结果区 -->
+    <!-- 检测结果页 -->
     <div id="detectResult" style="display:none;"></div>
     <div class="btn-group" id="detectBtns" style="display:none;">
         <div class="btn btn-outline" onclick="goToDetection(true)">返回检测工具</div>
@@ -440,6 +711,17 @@
         <div class="step-item">现有组网</div>
         <div class="step-item">优化组网</div>
         <div class="step-item">方案报告</div>
+    </div>
+    <div class="sub-tabs">
+        <div class="sub-tab active" onclick="switchSubTab('actual')">实际户型图</div>
+        <div class="sub-tab" onclick="switchSubTab('standard')">标准户型图</div>
+    </div>
+    <div id="standardSearch" style="display:none;">
+        <div class="search-bar">
+            <div class="search-city">长春<span style="font-size:10px;">▼</span></div>
+            <div class="search-divider"></div>
+            <input class="search-input" type="text" placeholder="请输入小区名称">
+        </div>
     </div>
     <div class="room-tabs" id="roomTabs"></div>
     <div class="house-grid" id="houseGrid"></div>
@@ -466,14 +748,16 @@
             <canvas id="heatmapCanvas"></canvas>
             <canvas id="deviceCanvas" class="interactive"></canvas>
         </div>
-        <div class="drag-hint" id="dragHint" style="display:none;">拖动户型图上的设备图标可调整位置，热力图将实时更新</div>
+        <div class="drag-hint" id="dragHint" style="display:none;">拖动户型图上的设备图标可调整位置，热力图实时更新</div>
         <div class="coverage-info">
-            <span>整体覆盖率</span>
+            <span class="coverage-icon">📶</span>
+            <span style="font-size:14px;">WiFi覆盖率</span>
             <div class="coverage-bar"><div class="coverage-fill" id="coverageFill" style="width:0%"></div></div>
-            <span id="coverageText">0%</span>
+            <span class="coverage-text" id="coverageText">0%</span>
+            <span class="coverage-eval" id="coverageEval"></span>
         </div>
         <div class="device-panel">
-            <h3>点击添加WiFi设备到户型图</h3>
+            <h3>添加现有WiFi设备到户型图</h3>
             <div class="device-bar" id="deviceList"></div>
         </div>
     </div>
@@ -500,11 +784,13 @@
             <canvas id="optHeatmapCanvas"></canvas>
             <canvas id="optDeviceCanvas" class="interactive"></canvas>
         </div>
-        <div class="drag-hint" id="optDragHint">拖动设备图标可调整位置，点击右上角X可移除设备</div>
+        <div class="drag-hint" id="optDragHint">拖动设备图标可调整位置，点击右上角X移除设备</div>
         <div class="coverage-info">
-            <span>优化覆盖率</span>
+            <span class="coverage-icon">📶</span>
+            <span style="font-size:14px;">优化后覆盖率</span>
             <div class="coverage-bar"><div class="coverage-fill" id="optCoverageFill" style="width:0%"></div></div>
-            <span id="optCoverageText">0%</span>
+            <span class="coverage-text" id="optCoverageText">0%</span>
+            <span class="coverage-eval" id="optCoverageEval"></span>
         </div>
         <div id="optExistingDevices"></div>
         <div id="optDeviceList"></div>
@@ -527,33 +813,60 @@
         <div class="step-item done">优化组网</div>
         <div class="step-item active">方案报告</div>
     </div>
-    <div class="report-section">
-        <h3>📋 户型信息</h3>
-        <div class="report-item"><span class="label">户型</span><span class="value" id="rHouseName">-</span></div>
-        <div class="report-item"><span class="label">面积</span><span class="value" id="rHouseArea">-</span></div>
-        <div class="report-item"><span class="label">房间数</span><span class="value" id="rHouseRooms">-</span></div>
+    <div class="report-tip">
+        <div class="report-tip-icon">!</div>
+        <div class="report-tip-text">根据您的户型和组网需求，智能推荐最优组网方案</div>
+        <div class="report-tag green">优化后</div>
     </div>
-    <div class="report-section">
-        <h3>📡 推荐组网方案</h3>
+    <div class="compare-section">
+        <div class="compare-title">优化后组网方案</div>
+        <div class="floorplan-container" id="reportFloorplanContainer" style="margin-bottom:12px;">
+            <img id="reportFloorplanImg" src="" alt="户型图" crossorigin="anonymous">
+            <canvas id="reportHeatmapCanvas"></canvas>
+            <canvas id="reportDeviceCanvas"></canvas>
+        </div>
+        <div class="coverage-info">
+            <span class="coverage-icon">📶</span>
+            <span style="font-size:14px;">WiFi覆盖率</span>
+            <div class="coverage-bar"><div class="coverage-fill" id="reportCoverageFill" style="width:0%"></div></div>
+            <span class="coverage-text" id="reportCoverageText">0%</span>
+            <span class="coverage-eval" id="reportCoverageEval"></span>
+        </div>
         <div id="rPlanList"></div>
+        <div class="fttr-section">
+            <div class="fttr-icon">📡</div>
+            <div class="fttr-text">选择中国电信FTTR全光WiFi，光纤到房间，千兆全覆盖</div>
+        </div>
+    </div>
+    <div class="compare-section">
+        <div class="compare-title"><span class="report-tag gray">优化前</span> 原有组网</div>
+        <div class="floorplan-container" id="reportBeforeContainer" style="margin-bottom:12px;">
+            <img id="reportBeforeImg" src="" alt="户型图" crossorigin="anonymous">
+        </div>
+        <div class="coverage-info">
+            <span class="coverage-icon">📶</span>
+            <span style="font-size:14px;">WiFi覆盖率</span>
+            <div class="coverage-bar"><div class="coverage-fill" id="reportBeforeFill" style="width:0%"></div></div>
+            <span class="coverage-text" id="reportBeforeText">0%</span>
+        </div>
     </div>
     <div class="report-section">
-        <h3>📶 覆盖效果对比</h3>
+        <h3>📋 优化效果对比</h3>
         <div class="report-item"><span class="label">优化前覆盖率</span><span class="value" id="rBeforeCov">0%</span></div>
-        <div class="report-item"><span class="label">优化后覆盖率</span><span class="value" id="rAfterCov" style="color:#51cf66;font-weight:600;">0%</span></div>
-        <div class="report-item"><span class="label">提升幅度</span><span class="value" id="rImprove" style="color:#2b7de9;">+0%</span></div>
+        <div class="report-item"><span class="label">优化后覆盖率</span><span class="value" id="rAfterCov" style="color:#00B42A;font-weight:600;">0%</span></div>
+        <div class="report-item"><span class="label">覆盖提升</span><span class="value" id="rImprove" style="color:#4080FF;">+0%</span></div>
     </div>
     <div class="report-section">
         <h3>💰 预估费用</h3>
         <div id="rCostList"></div>
         <div class="report-item" style="border-top:1.5px solid #e0e0e0;margin-top:8px;padding-top:12px;">
             <span class="label" style="font-weight:600;color:#333;">合计</span>
-            <span class="value" id="rTotalCost" style="color:#ff6b6b;font-size:16px;">-</span>
+            <span class="value" id="rTotalCost" style="color:#F53F3F;font-size:16px;">-</span>
         </div>
     </div>
     <div class="btn-group">
-        <div class="btn btn-outline" onclick="goToStep(1)">重新选择户型</div>
-        <div class="btn btn-primary" onclick="shareReport()">分享方案</div>
+        <div class="btn btn-outline" style="height:48px;line-height:48px;border:1px solid #EEEEEE;color:#666;" onclick="goToStep(1)">重新检测</div>
+        <div class="btn btn-primary" style="height:48px;line-height:48px;background:#2383FF;" onclick="shareReport()">报告分享</div>
     </div>
 </div>
 
@@ -605,12 +918,14 @@ const ROOM_TYPES = [
 ];
 
 const DEVICES = [
-    { id: 'subgw',   name: '子网关',    icon: 'subgw',   emoji: '📡', range: 8,  price: 299, desc: 'FTTR',    color: '#2b7de9' },
-    { id: 'wifi7',   name: 'WiFi7',     icon: 'wifi7',   emoji: '📶', range: 12, price: 499, desc: '路由器',   color: '#7c3aed' },
-    { id: 'wifi6',   name: 'WiFi6',     icon: 'wifi6',   emoji: '📡', range: 10, price: 299, desc: '路由器',   color: '#2b7de9' },
-    { id: 'wifi5',   name: 'WiFi5路由器', icon: 'wifi5', emoji: '📶', range: 6,  price: 0,   desc: '现有设备', color: '#ff6b6b' },
-    { id: 'optical', name: '万兆光猫',   icon: 'optical', emoji: '🔲', range: 3,  price: 399, desc: '万兆光猫', color: '#ffd93d' },
-    { id: 'ibox',    name: '信息箱',     icon: 'ibox',    emoji: '📦', range: 2,  price: 150, desc: '信息箱',   color: '#ff922b' }
+    { id: 'maingw',  name: '主网关',    icon: 'maingw',  emoji: '📡', range: 6,  price: 499, desc: 'FTTR',    color: '#4080FF' },
+    { id: 'subgw',   name: '子网关',    icon: 'subgw',   emoji: '📶', range: 8,  price: 299, desc: 'FTTR',    color: '#4080FF' },
+    { id: 'wifi7',   name: 'WiFi7',     icon: 'wifi7',   emoji: '📶', range: 12, price: 499, desc: '路由器',  color: '#7c3aed' },
+    { id: 'wifi6',   name: 'WiFi6',     icon: 'wifi6',   emoji: '📡', range: 10, price: 299, desc: '路由器',  color: '#4080FF' },
+    { id: 'wifi5',   name: 'WiFi5',     icon: 'wifi5',   emoji: '📡', range: 6,  price: 0,   desc: '现有设备', color: '#F53F3F' },
+    { id: 'ap',      name: 'AP面板',    icon: 'ap',      emoji: '🔲', range: 8,  price: 199, desc: 'AP面板',  color: '#ffd93d' },
+    { id: 'optical', name: '万兆光猫',  icon: 'optical', emoji: '🔲', range: 3,  price: 399, desc: '万兆光猫', color: '#ffd93d' },
+    { id: 'ibox',    name: '信息箱',    icon: 'ibox',    emoji: '📦', range: 2,  price: 150, desc: '信息箱',  color: '#ff922b' }
 ];
 
 // ============ 墙体数据（从SVG文件提取的墙壁线段，用于穿墙信号衰减） ============
@@ -1309,16 +1624,25 @@ const WALL_DATA = {
     ],
 };
 
+// ============ 覆盖率评价 ============
+function getCoverageLevel(cov) {
+    if (cov <= 20) return { text: '差', color: '#F44336' };
+    if (cov <= 50) return { text: '较差', color: '#FF9800' };
+    if (cov <= 77) return { text: '一般', color: '#FFEB3B' };
+    if (cov <= 95) return { text: '良好', color: '#AEEA00' };
+    return { text: '优秀', color: '#00B42A' };
+}
+
 // ============ 状态 ============
 let selectedHouse = null;
 let currentType = 1;
 let currentCoverage = 0;
 let optCoverage = 0;
 let _optDevices = [];
+let currentSubTab = 'actual';
 
-// 设备放置状态：{ id, x(0~1), y(0~1) } 相对坐标
 let placedDevices = [];
-let dragging = null; // { index, offsetX, offsetY }
+let dragging = null;
 
 // ============ 渲染 ============
 function renderRoomTabs() {
@@ -1332,6 +1656,20 @@ function selectType(type) {
     currentType = type;
     renderRoomTabs();
     renderHouseGrid();
+}
+
+function switchSubTab(tab) {
+    currentSubTab = tab;
+    document.querySelectorAll('.sub-tab').forEach(function(el) {
+        el.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    var searchEl = document.getElementById('standardSearch');
+    if (tab === 'standard') {
+        searchEl.style.display = 'block';
+    } else {
+        searchEl.style.display = 'none';
+    }
 }
 
 function renderHouseGrid() {
@@ -1383,7 +1721,7 @@ function goToStep(step) {
     }
 }
 
-// ============ 组网页面 ============
+// ============ 现有组网页面 ============
 function renderNetworkPage() {
     document.getElementById('currentHouseName').textContent = selectedHouse.label;
     document.getElementById('currentHouseArea').textContent = '(' + selectedHouse.acreage + '㎡)';
@@ -1394,7 +1732,6 @@ function renderNetworkPage() {
         setupCanvasSize('floorplanContainer', 'heatmapCanvas', 'deviceCanvas');
         drawAll();
     };
-    // 如果图片已缓存
     if (img.complete && img.naturalWidth > 0) {
         setTimeout(function() {
             setupCanvasSize('floorplanContainer', 'heatmapCanvas', 'deviceCanvas');
@@ -1433,22 +1770,31 @@ function setupCanvasSize(containerId, heatmapId, deviceId) {
     deviceCanvas.style.height = h + 'px';
 }
 
-// ============ 设备列表 ============
+// ============ 设备列表（页面2：5种设备各2个） ============
 function renderDeviceList() {
     var list = document.getElementById('deviceList');
-    list.innerHTML = DEVICES.map(function(d) {
+    var displayIds = ['wifi5', 'wifi6', 'ap', 'optical', 'ibox'];
+    list.innerHTML = displayIds.map(function(id) {
+        var d = DEVICES.find(function(dev) { return dev.id === id; });
+        if (!d) return '';
         var placed = placedDevices.filter(function(p) { return p.id === d.id; });
         var isPlaced = placed.length > 0;
-        return '<div class="device-bar-item' + (isPlaced ? ' placed' : '') + '" onclick="addDevice(\'' + d.id + '\')">' +
+        var maxReached = placed.length >= 2;
+        return '<div class="device-bar-item' + (isPlaced ? ' placed' : '') + '" onclick="' + (maxReached ? '' : 'addDevice(\'' + d.id + '\')') + '">' +
             '<div class="device-bar-icon">' + (d.emoji || d.icon) + '</div>' +
             '<div class="device-bar-name">' + d.name + '</div>' +
-            (isPlaced ? '<div class="device-bar-count">x' + placed.length + '</div>' : '') +
+            (maxReached ? '<div class="device-bar-count">x' + placed.length + '</div>' : '') +
             '</div>';
     }).join('');
 }
 
 function addDevice(id) {
-    // 在户型图中央偏随机位置放置设备
+    var existing = placedDevices.filter(function(p) { return p.id === id; });
+    if (existing.length >= 2) {
+        var dev0 = DEVICES.find(function(d) { return d.id === id; });
+        showToast(dev0.name + ' 最多放置2个');
+        return;
+    }
     placedDevices.push({
         id: id,
         x: 0.15 + Math.random() * 0.7,
@@ -1487,57 +1833,40 @@ function drawHeatmap(canvasId, devices) {
     var w = canvas.width;
     var h = canvas.height;
     var dpr = window.devicePixelRatio || 1;
-
     ctx.clearRect(0, 0, w, h);
-
     if (!devices || devices.length === 0) return;
-
-    // 获取墙体线段数据
     var walls = getWallSegments(canvasId);
-
-    // 色阶定义（5级）：红→橙→黄→绿→淡紫
     var colorStops = [
-        [230, 50, 50, 0.55],    // 红色：信号最优
-        [255, 140, 30, 0.45],   // 橙色：信号良好
-        [240, 210, 20, 0.35],   // 黄色：信号中等
-        [80, 190, 60, 0.22],    // 绿色：信号较弱
-        [160, 150, 210, 0.14]   // 淡紫色：信号极差
+        [230, 50, 50, 0.55],
+        [255, 140, 30, 0.45],
+        [240, 210, 20, 0.35],
+        [80, 190, 60, 0.22],
+        [160, 150, 210, 0.14]
     ];
-
-    // 使用射线法计算每个像素的穿墙次数和信号强度
     var step = Math.max(3, Math.round(4 * dpr));
     var imgData = ctx.createImageData(w, h);
     var data = imgData.data;
-
-    // 预处理：将每面墙转换为参数方程形式，加速射线求交
     var wallSegments = walls.map(function(wl) {
         var dx = wl.x2 - wl.x1;
         var dy = wl.y2 - wl.y1;
         var len = Math.sqrt(dx * dx + dy * dy);
         return { x1: wl.x1, y1: wl.y1, x2: wl.x2, y2: wl.y2, dx: dx, dy: dy, len: len };
     });
-
-    // 对每个采样像素，计算所有设备叠加后的最高信号强度
     for (var py = 0; py < h; py += step) {
         for (var px = 0; px < w; px += step) {
-            var bestLevel = -1; // -1=无信号, 0=最优(红), 1=橙, 2=黄, 3=绿, 4=淡紫
-
+            var bestLevel = -1;
             for (var di = 0; di < devices.length; di++) {
                 var pd = devices[di];
                 var dev = DEVICES.find(function(d) { return d.id === pd.id; });
                 if (!dev || dev.range <= 0) continue;
-
                 var cx = pd.x * w;
                 var cy = pd.y * h;
                 var ddx = px - cx;
                 var ddy = py - cy;
                 var dist = Math.sqrt(ddx * ddx + ddy * ddy);
-
                 var diag = Math.sqrt(w * w + h * h);
                 var maxDist = dev.range * dpr * diag / 38;
                 if (dist > maxDist) continue;
-
-                // 计算从设备到该像素的射线穿过了几堵墙
                 var wallCount = 0;
                 var rayDx = ddx;
                 var rayDy = ddy;
@@ -1546,7 +1875,6 @@ function drawHeatmap(canvasId, devices) {
                     for (var wi = 0; wi < wallSegments.length; wi++) {
                         var ws = wallSegments[wi];
                         if (ws.len < 1) continue;
-                        // 射线-线段求交
                         var sdx = ws.dx, sdy = ws.dy;
                         var denom = rayDx * sdy - rayDy * sdx;
                         if (Math.abs(denom) < 0.001) continue;
@@ -1557,8 +1885,6 @@ function drawHeatmap(canvasId, devices) {
                         }
                     }
                 }
-
-                // 基础信号等级（按距离衰减）
                 var distRatio = dist / maxDist;
                 var baseLevel;
                 if (distRatio < 0.15) baseLevel = 0;
@@ -1566,20 +1892,14 @@ function drawHeatmap(canvasId, devices) {
                 else if (distRatio < 0.55) baseLevel = 2;
                 else if (distRatio < 0.78) baseLevel = 3;
                 else baseLevel = 4;
-
-                // 穿墙后每堵墙降一个等级
                 var finalLevel = baseLevel + wallCount;
                 if (finalLevel > 4) finalLevel = 4;
-
-                // 多设备叠加取最优等级
                 if (bestLevel < 0 || finalLevel < bestLevel) {
                     bestLevel = finalLevel;
                 }
             }
-
             if (bestLevel >= 0 && bestLevel < colorStops.length) {
                 var cs = colorStops[bestLevel];
-                // 填充step*step的方块
                 for (var sy = 0; sy < step && (py + sy) < h; sy++) {
                     for (var sx = 0; sx < step && (px + sx) < w; sx++) {
                         var idx = ((py + sy) * w + (px + sx)) * 4;
@@ -1592,7 +1912,6 @@ function drawHeatmap(canvasId, devices) {
             }
         }
     }
-
     ctx.putImageData(imgData, 0, 0);
 }
 
@@ -1603,39 +1922,28 @@ function getWallSegments(canvasId) {
         container = document.getElementById('floorplanContainer');
     } else if (canvasId === 'optHeatmapCanvas') {
         container = document.getElementById('optFloorplanContainer');
+    } else if (canvasId === 'reportHeatmapCanvas') {
+        container = document.getElementById('reportFloorplanContainer');
     }
     if (!container) return [];
-
     var img = container.querySelector('img');
     if (!img || !img.complete || img.naturalWidth === 0) return [];
-
     var svgW = img.naturalWidth;
     var svgH = img.naturalHeight;
     if (!svgW || !svgH) return [];
-
     var displayW = img.offsetWidth;
     var displayH = img.offsetHeight;
     var dpr = window.devicePixelRatio || 1;
-
-    // SVG viewBox坐标 → canvas像素坐标
     var scaleX = (displayW * dpr) / svgW;
     var scaleY = (displayH * dpr) / svgH;
-
     var houseId = getHouseIdFromImg(img);
     var rawWalls = WALL_DATA[houseId] || [];
-
     return rawWalls.map(function(w) {
-        return {
-            x1: w[0] * scaleX,
-            y1: w[1] * scaleY,
-            x2: w[2] * scaleX,
-            y2: w[3] * scaleY
-        };
+        return { x1: w[0] * scaleX, y1: w[1] * scaleY, x2: w[2] * scaleX, y2: w[3] * scaleY };
     });
 }
 
 function getHouseIdFromImg(img) {
-    // 从img.src中提取房型ID，如 "svg/1.0.40.svg" -> "1.0.40"
     var match = img.src.match(/\/([^\/]+)\.svg/);
     return match ? match[1] : '';
 }
@@ -1646,27 +1954,21 @@ function drawDevices(canvasId, devices, opts) {
     var ctx = canvas.getContext('2d');
     var dpr = window.devicePixelRatio || 1;
     var showRemove = opts && opts.showRemove;
-
+    var showLabel = opts && (opts.showLabel || opts.showRemove);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     devices.forEach(function(pd, idx) {
         var dev = DEVICES.find(function(d) { return d.id === pd.id; });
         if (!dev) return;
-
         var cx = pd.x * canvas.width;
         var cy = pd.y * canvas.height;
         var r = 16 * dpr;
-        var rw = r * 2.2;  // 圆角矩形宽度
-        var rh = r * 2.2;  // 圆角矩形高度
-        var cr = 6 * dpr;  // 圆角半径
-
-        // 外圈阴影
+        var rw = r * 2.2;
+        var rh = r * 2.2;
+        var cr = 6 * dpr;
         ctx.save();
         ctx.shadowColor = 'rgba(0,0,0,0.18)';
         ctx.shadowBlur = 4 * dpr;
         ctx.shadowOffsetY = 2 * dpr;
-
-        // 白色圆角矩形背景
         var rx = cx - rw / 2;
         var ry = cy - rh / 2;
         ctx.beginPath();
@@ -1687,26 +1989,21 @@ function drawDevices(canvasId, devices, opts) {
         ctx.stroke();
         ctx.restore();
 
-        // 绘制设备简笔图案
         ctx.save();
-        ctx.strokeStyle = '#5a6577';  // 蓝灰色
+        ctx.strokeStyle = '#5a6577';
         ctx.fillStyle = '#5a6577';
         ctx.lineWidth = 1.5 * dpr;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-
         var iconType = dev.icon;
-        var s = r * 0.55; // 图标缩放因子
+        var s = r * 0.55;
 
-        if (iconType === 'subgw' || iconType === 'wifi6' || iconType === 'wifi7' || iconType === 'wifi5') {
-            // 路由器：机身+天线+蓝色指示灯
-            var bw = s * 1.6; // 机身宽
-            var bh = s * 0.9; // 机身高
+        if (iconType === 'subgw' || iconType === 'wifi6' || iconType === 'wifi7' || iconType === 'wifi5' || iconType === 'maingw') {
+            var bw = s * 1.6;
+            var bh = s * 0.9;
             var bx = cx - bw / 2;
             var by = cy + s * 0.2;
-
-            // 天线
-            var antennaCount = iconType === 'subgw' ? 2 : 3;
+            var antennaCount = (iconType === 'subgw' || iconType === 'maingw') ? 2 : 3;
             var antennaSpacing = bw / (antennaCount + 1);
             for (var ai = 0; ai < antennaCount; ai++) {
                 var ax = bx + antennaSpacing * (ai + 1);
@@ -1714,13 +2011,10 @@ function drawDevices(canvasId, devices, opts) {
                 ctx.moveTo(ax, by);
                 ctx.lineTo(ax, by - s * 1.2);
                 ctx.stroke();
-                // 天线顶端小圆
                 ctx.beginPath();
                 ctx.arc(ax, by - s * 1.2, 1.5 * dpr, 0, Math.PI * 2);
                 ctx.fill();
             }
-
-            // 机身（圆角矩形）
             var bodyCr = 2 * dpr;
             ctx.beginPath();
             ctx.moveTo(bx + bodyCr, by);
@@ -1734,8 +2028,6 @@ function drawDevices(canvasId, devices, opts) {
             ctx.arcTo(bx, by, bx + bodyCr, by, bodyCr);
             ctx.closePath();
             ctx.stroke();
-
-            // 蓝色指示灯
             ctx.fillStyle = '#3b82f6';
             var ledCount = iconType === 'wifi7' ? 3 : 2;
             var ledY = by + bh * 0.55;
@@ -1746,8 +2038,6 @@ function drawDevices(canvasId, devices, opts) {
                 ctx.arc(lx, ledY, 1.5 * dpr, 0, Math.PI * 2);
                 ctx.fill();
             }
-
-            // WiFi7/WiFi6标注信号线（顶部弧形）
             if (iconType === 'wifi6' || iconType === 'wifi7') {
                 ctx.strokeStyle = '#3b82f6';
                 ctx.lineWidth = 1.2 * dpr;
@@ -1759,82 +2049,90 @@ function drawDevices(canvasId, devices, opts) {
                     ctx.stroke();
                 }
             }
-
-        } else if (iconType === 'optical') {
-            // 万兆光猫：方形机身+蓝色指示灯
-            var bw = s * 1.8;
-            var bh = s * 1.2;
-            var bx = cx - bw / 2;
-            var by = cy - bh / 2;
-            var bodyCr = 2 * dpr;
-
+        } else if (iconType === 'ap') {
+            var pw = s * 1.0;
+            var ph = s * 1.6;
+            var px2 = cx - pw / 2;
+            var py2 = cy - ph / 2;
+            var pCr = 3 * dpr;
             ctx.beginPath();
-            ctx.moveTo(bx + bodyCr, by);
-            ctx.lineTo(bx + bw - bodyCr, by);
-            ctx.arcTo(bx + bw, by, bx + bw, by + bodyCr, bodyCr);
-            ctx.lineTo(bx + bw, by + bh - bodyCr);
-            ctx.arcTo(bx + bw, by + bh, bx + bw - bodyCr, by + bh, bodyCr);
-            ctx.lineTo(bx + bodyCr, by + bh);
-            ctx.arcTo(bx, by + bh, bx, by + bh - bodyCr, bodyCr);
-            ctx.lineTo(bx, by + bodyCr);
-            ctx.arcTo(bx, by, bx + bodyCr, by, bodyCr);
+            ctx.moveTo(px2 + pCr, py2);
+            ctx.lineTo(px2 + pw - pCr, py2);
+            ctx.arcTo(px2 + pw, py2, px2 + pw, py2 + pCr, pCr);
+            ctx.lineTo(px2 + pw, py2 + ph - pCr);
+            ctx.arcTo(px2 + pw, py2 + ph, px2 + pw - pCr, py2 + ph, pCr);
+            ctx.lineTo(px2 + pCr, py2 + ph);
+            ctx.arcTo(px2, py2 + ph, px2, py2 + ph - pCr, pCr);
+            ctx.lineTo(px2, py2 + pCr);
+            ctx.arcTo(px2, py2, px2 + pCr, py2, pCr);
             ctx.closePath();
             ctx.stroke();
-
-            // 蓝色指示灯
             ctx.fillStyle = '#3b82f6';
             ctx.beginPath();
-            ctx.arc(cx, cy + bh * 0.1, 2 * dpr, 0, Math.PI * 2);
+            ctx.arc(cx, cy + ph * 0.15, 2.5 * dpr, 0, Math.PI * 2);
             ctx.fill();
-
-        } else if (iconType === 'ibox') {
-            // 信息箱：箱体+顶盖+蓝色闪电
-            var bw = s * 1.6;
-            var bh = s * 1.4;
-            var bx = cx - bw / 2;
-            var by = cy - bh * 0.3;
-
-            // 顶盖（梯形）
+        } else if (iconType === 'optical') {
+            var bw2 = s * 1.8;
+            var bh2 = s * 1.2;
+            var bx2 = cx - bw2 / 2;
+            var by2 = cy - bh2 / 2;
+            var bodyCr2 = 2 * dpr;
             ctx.beginPath();
-            ctx.moveTo(bx - s * 0.15, by);
-            ctx.lineTo(bx + bw + s * 0.15, by);
-            ctx.lineTo(bx + bw + s * 0.05, by - s * 0.4);
-            ctx.lineTo(bx - s * 0.05, by - s * 0.4);
+            ctx.moveTo(bx2 + bodyCr2, by2);
+            ctx.lineTo(bx2 + bw2 - bodyCr2, by2);
+            ctx.arcTo(bx2 + bw2, by2, bx2 + bw2, by2 + bodyCr2, bodyCr2);
+            ctx.lineTo(bx2 + bw2, by2 + bh2 - bodyCr2);
+            ctx.arcTo(bx2 + bw2, by2 + bh2, bx2 + bw2 - bodyCr2, by2 + bh2, bodyCr2);
+            ctx.lineTo(bx2 + bodyCr2, by2 + bh2);
+            ctx.arcTo(bx2, by2 + bh2, bx2, by2 + bh2 - bodyCr2, bodyCr2);
+            ctx.lineTo(bx2, by2 + bodyCr2);
+            ctx.arcTo(bx2, by2, bx2 + bodyCr2, by2, bodyCr2);
             ctx.closePath();
             ctx.stroke();
-
-            // 箱体
-            var bodyCr = 2 * dpr;
-            ctx.beginPath();
-            ctx.moveTo(bx + bodyCr, by);
-            ctx.lineTo(bx + bw - bodyCr, by);
-            ctx.arcTo(bx + bw, by, bx + bw, by + bodyCr, bodyCr);
-            ctx.lineTo(bx + bw, by + bh - bodyCr);
-            ctx.arcTo(bx + bw, by + bh, bx + bw - bodyCr, by + bh, bodyCr);
-            ctx.lineTo(bx + bodyCr, by + bh);
-            ctx.arcTo(bx, by + bh, bx, by + bh - bodyCr, bodyCr);
-            ctx.lineTo(bx, by + bodyCr);
-            ctx.arcTo(bx, by, bx + bodyCr, by, bodyCr);
-            ctx.closePath();
-            ctx.stroke();
-
-            // 蓝色闪电
             ctx.fillStyle = '#3b82f6';
-            var lx = cx;
-            var ly = by + bh * 0.25;
             ctx.beginPath();
-            ctx.moveTo(lx - s * 0.15, ly);
-            ctx.lineTo(lx + s * 0.05, ly - s * 0.25);
-            ctx.lineTo(lx - s * 0.02, ly);
-            ctx.lineTo(lx + s * 0.15, ly + s * 0.25);
-            ctx.lineTo(lx - s * 0.05, ly);
+            ctx.arc(cx, cy + bh2 * 0.1, 2 * dpr, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (iconType === 'ibox') {
+            var bw3 = s * 1.6;
+            var bh3 = s * 1.4;
+            var bx3 = cx - bw3 / 2;
+            var by3 = cy - bh3 * 0.3;
+            ctx.beginPath();
+            ctx.moveTo(bx3 - s * 0.15, by3);
+            ctx.lineTo(bx3 + bw3 + s * 0.15, by3);
+            ctx.lineTo(bx3 + bw3 + s * 0.05, by3 - s * 0.4);
+            ctx.lineTo(bx3 - s * 0.05, by3 - s * 0.4);
+            ctx.closePath();
+            ctx.stroke();
+            var bodyCr3 = 2 * dpr;
+            ctx.beginPath();
+            ctx.moveTo(bx3 + bodyCr3, by3);
+            ctx.lineTo(bx3 + bw3 - bodyCr3, by3);
+            ctx.arcTo(bx3 + bw3, by3, bx3 + bw3, by3 + bodyCr3, bodyCr3);
+            ctx.lineTo(bx3 + bw3, by3 + bh3 - bodyCr3);
+            ctx.arcTo(bx3 + bw3, by3 + bh3, bx3 + bw3 - bodyCr3, by3 + bh3, bodyCr3);
+            ctx.lineTo(bx3 + bodyCr3, by3 + bh3);
+            ctx.arcTo(bx3, by3 + bh3, bx3, by3 + bh3 - bodyCr3, bodyCr3);
+            ctx.lineTo(bx3, by3 + bodyCr3);
+            ctx.arcTo(bx3, by3, bx3 + bodyCr3, by3, bodyCr3);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.fillStyle = '#3b82f6';
+            var lx2 = cx;
+            var ly2 = by3 + bh3 * 0.25;
+            ctx.beginPath();
+            ctx.moveTo(lx2 - s * 0.15, ly2);
+            ctx.lineTo(lx2 + s * 0.05, ly2 - s * 0.25);
+            ctx.lineTo(lx2 - s * 0.02, ly2);
+            ctx.lineTo(lx2 + s * 0.15, ly2 + s * 0.25);
+            ctx.lineTo(lx2 - s * 0.05, ly2);
             ctx.closePath();
             ctx.fill();
         }
         ctx.restore();
 
-        // 序号标签（白色半透明底）
-        if (showRemove) {
+        if (showLabel) {
             var labelY = cy + rh / 2 + 4 * dpr;
             ctx.font = 'bold ' + (9 * dpr) + 'px sans-serif';
             ctx.textAlign = 'center';
@@ -1843,12 +2141,10 @@ function drawDevices(canvasId, devices, opts) {
             ctx.fillText(dev.name, cx, labelY);
         }
 
-        // 右上角X移除按钮
         if (showRemove) {
             var bxr = cx + rw / 2 - 2 * dpr;
             var byr = cy - rh / 2 + 2 * dpr;
             var br = 7 * dpr;
-
             ctx.beginPath();
             ctx.arc(bxr, byr, br, 0, Math.PI * 2);
             ctx.fillStyle = '#ff4444';
@@ -1856,7 +2152,6 @@ function drawDevices(canvasId, devices, opts) {
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 1.5 * dpr;
             ctx.stroke();
-
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 1.8 * dpr;
             ctx.lineCap = 'round';
@@ -1874,16 +2169,17 @@ function drawDevices(canvasId, devices, opts) {
 // ============ 覆盖率计算 ============
 function updateCoverageBar() {
     var cov = calcCoverage(placedDevices);
-    // 现有组网覆盖率上限85%，确保优化方案（95%+）始终有优势
     cov = Math.min(cov, 85);
     currentCoverage = cov;
     document.getElementById('coverageFill').style.width = cov + '%';
     document.getElementById('coverageText').textContent = cov + '%';
+    var level = getCoverageLevel(cov);
+    document.getElementById('coverageEval').textContent = level.text;
+    document.getElementById('coverageEval').style.color = level.color;
 }
 
 function calcCoverage(devices) {
     if (!devices || devices.length === 0) return 0;
-    // 直接扫描热力图Canvas像素，统计有信号覆盖的比例
     var canvas = document.getElementById('heatmapCanvas');
     if (!canvas || canvas.width === 0) return 0;
     var ctx = canvas.getContext('2d');
@@ -1892,14 +2188,12 @@ function calcCoverage(devices) {
         var data = imgData.data;
         var totalPixels = 0;
         var coveredPixels = 0;
-        // 采样步长：每隔step个像素取一次，降低计算量
         var step = 4;
         for (var y = 0; y < canvas.height; y += step) {
             for (var x = 0; x < canvas.width; x += step) {
                 var idx = (y * canvas.width + x) * 4;
                 var alpha = data[idx + 3];
                 totalPixels++;
-                // alpha > 10 视为有信号覆盖
                 if (alpha > 10) coveredPixels++;
             }
         }
@@ -1911,51 +2205,36 @@ function calcCoverage(devices) {
     }
 }
 
-// ============ 拖动交互 ============
+// ============ 拖拽交互 ============
 function initDrag() {
     var canvas = document.getElementById('deviceCanvas');
     if (!canvas) return;
-
-    // 查找点击到的设备
     function findDevice(x, y) {
         var dpr = window.devicePixelRatio || 1;
         for (var i = placedDevices.length - 1; i >= 0; i--) {
             var pd = placedDevices[i];
             var dx = (x * dpr) - (pd.x * canvas.width);
             var dy = (y * dpr) - (pd.y * canvas.height);
-            if (Math.sqrt(dx * dx + dy * dy) < 30 * dpr) {
-                return i;
-            }
+            if (Math.sqrt(dx * dx + dy * dy) < 30 * dpr) return i;
         }
         return -1;
     }
-
     function getPos(e) {
         var rect = canvas.getBoundingClientRect();
         var clientX, clientY;
-        if (e.touches) {
-            clientX = e.touches[0].clientX;
-            clientY = e.touches[0].clientY;
-        } else {
-            clientX = e.clientX;
-            clientY = e.clientY;
-        }
+        if (e.touches) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+        else { clientX = e.clientX; clientY = e.clientY; }
         return { x: clientX - rect.left, y: clientY - rect.top };
     }
-
-    // 长按删除定时器
     var longPressTimer = null;
     var longPressIndex = -1;
-
     function startDrag(e) {
         e.preventDefault();
         var pos = getPos(e);
         var idx = findDevice(pos.x, pos.y);
         if (idx < 0) return;
-
         longPressIndex = idx;
         longPressTimer = setTimeout(function() {
-            // 长按 800ms 删除设备
             if (longPressIndex >= 0 && longPressIndex < placedDevices.length) {
                 var dev = DEVICES.find(function(d) { return d.id === placedDevices[longPressIndex].id; });
                 removeDevice(longPressIndex);
@@ -1964,57 +2243,40 @@ function initDrag() {
             longPressIndex = -1;
             dragging = null;
         }, 800);
-
         var pd = placedDevices[idx];
         var dpr = window.devicePixelRatio || 1;
-        dragging = {
-            index: idx,
-            offsetX: pos.x * dpr - pd.x * canvas.width,
-            offsetY: pos.y * dpr - pd.y * canvas.height
-        };
+        dragging = { index: idx, offsetX: pos.x * dpr - pd.x * canvas.width, offsetY: pos.y * dpr - pd.y * canvas.height };
     }
-
     function moveDrag(e) {
         if (!dragging) return;
         e.preventDefault();
         clearTimeout(longPressTimer);
         longPressIndex = -1;
-
         var pos = getPos(e);
         var dpr = window.devicePixelRatio || 1;
         var newX = (pos.x * dpr - dragging.offsetX) / canvas.width;
         var newY = (pos.y * dpr - dragging.offsetY) / canvas.height;
-
-        // 限制在0.05~0.95范围内
         placedDevices[dragging.index].x = Math.max(0.05, Math.min(0.95, newX));
         placedDevices[dragging.index].y = Math.max(0.05, Math.min(0.95, newY));
-
         drawAll();
         updateCoverageBar();
     }
-
     function endDrag(e) {
         clearTimeout(longPressTimer);
         longPressIndex = -1;
-        if (dragging) {
-            dragging = null;
-        }
+        if (dragging) dragging = null;
     }
-
-    // 鼠标事件
     canvas.addEventListener('mousedown', startDrag);
     canvas.addEventListener('mousemove', moveDrag);
     canvas.addEventListener('mouseup', endDrag);
     canvas.addEventListener('mouseleave', endDrag);
-
-    // 触摸事件
     canvas.addEventListener('touchstart', startDrag, { passive: false });
     canvas.addEventListener('touchmove', moveDrag, { passive: false });
     canvas.addEventListener('touchend', endDrag);
     canvas.addEventListener('touchcancel', endDrag);
 }
 
-// ============ 优化方案 ============
+// ============ 优化组网 ============
 function drawOptAll() {
     drawHeatmap('optHeatmapCanvas', _optDevices);
     drawDevices('optDeviceCanvas', _optDevices, { showRemove: true });
@@ -2023,8 +2285,6 @@ function drawOptAll() {
 function initOptDrag() {
     var canvas = document.getElementById('optDeviceCanvas');
     if (!canvas) return;
-
-    // 移除旧事件监听器（通过克隆节点），但保留canvas尺寸
     var oldW = canvas.width;
     var oldH = canvas.height;
     var oldStyleW = canvas.style.width;
@@ -2036,26 +2296,19 @@ function initOptDrag() {
     newCanvas.style.height = oldStyleH;
     canvas.parentNode.replaceChild(newCanvas, canvas);
     canvas = newCanvas;
-    // 恢复class
     canvas.className = 'interactive';
-
     var isDragging = false;
     var dragIdx = -1;
-    var didMove = false;
-
     function findDevice(x, y) {
         var dpr = window.devicePixelRatio || 1;
         for (var i = _optDevices.length - 1; i >= 0; i--) {
             var pd = _optDevices[i];
             var dx = (x * dpr) - (pd.x * canvas.width);
             var dy = (y * dpr) - (pd.y * canvas.height);
-            if (Math.sqrt(dx * dx + dy * dy) < 30 * dpr) {
-                return i;
-            }
+            if (Math.sqrt(dx * dx + dy * dy) < 30 * dpr) return i;
         }
         return -1;
     }
-
     function findRemoveButton(x, y) {
         var dpr = window.devicePixelRatio || 1;
         var r = 16 * dpr;
@@ -2069,76 +2322,51 @@ function initOptDrag() {
             var br = 9 * dpr;
             var dx = (x * dpr) - bx;
             var dy = (y * dpr) - by;
-            if (Math.sqrt(dx * dx + dy * dy) < br) {
-                return i;
-            }
+            if (Math.sqrt(dx * dx + dy * dy) < br) return i;
         }
         return -1;
     }
-
     function getPos(e) {
         var rect = canvas.getBoundingClientRect();
         var clientX, clientY;
-        if (e.touches) {
-            clientX = e.touches[0].clientX;
-            clientY = e.touches[0].clientY;
-        } else {
-            clientX = e.clientX;
-            clientY = e.clientY;
-        }
+        if (e.touches) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+        else { clientX = e.clientX; clientY = e.clientY; }
         return { x: clientX - rect.left, y: clientY - rect.top };
     }
-
     function startDrag(e) {
         e.preventDefault();
         var pos = getPos(e);
-
-        // 优先检查是否点到了X按钮
         var rmIdx = findRemoveButton(pos.x, pos.y);
         if (rmIdx >= 0) {
             var dev = DEVICES.find(function(d) { return d.id === _optDevices[rmIdx].id; });
             _optDevices.splice(rmIdx, 1);
             drawOptAll();
+            updateOptCoverage();
+            renderOptAddDeviceList();
             showToast('已移除 ' + (dev ? dev.name : '设备'));
             return;
         }
-
         var idx = findDevice(pos.x, pos.y);
         if (idx < 0) return;
-
         isDragging = true;
         dragIdx = idx;
-        didMove = false;
-
         var pd = _optDevices[idx];
         var dpr = window.devicePixelRatio || 1;
-        canvas._dragOffset = {
-            x: pos.x * dpr - pd.x * canvas.width,
-            y: pos.y * dpr - pd.y * canvas.height
-        };
+        canvas._dragOffset = { x: pos.x * dpr - pd.x * canvas.width, y: pos.y * dpr - pd.y * canvas.height };
     }
-
     function moveDrag(e) {
         if (!isDragging || dragIdx < 0) return;
         e.preventDefault();
-        didMove = true;
-
         var pos = getPos(e);
         var dpr = window.devicePixelRatio || 1;
         var newX = (pos.x * dpr - canvas._dragOffset.x) / canvas.width;
         var newY = (pos.y * dpr - canvas._dragOffset.y) / canvas.height;
-
         _optDevices[dragIdx].x = Math.max(0.05, Math.min(0.95, newX));
         _optDevices[dragIdx].y = Math.max(0.05, Math.min(0.95, newY));
-
         drawOptAll();
+        updateOptCoverage();
     }
-
-    function endDrag(e) {
-        isDragging = false;
-        dragIdx = -1;
-    }
-
+    function endDrag(e) { isDragging = false; dragIdx = -1; }
     canvas.addEventListener('mousedown', startDrag);
     canvas.addEventListener('mousemove', moveDrag);
     canvas.addEventListener('mouseup', endDrag);
@@ -2147,9 +2375,22 @@ function initOptDrag() {
     canvas.addEventListener('touchmove', moveDrag, { passive: false });
     canvas.addEventListener('touchend', endDrag);
     canvas.addEventListener('touchcancel', endDrag);
-
-    // cloneNode清空了画布，需要重绘
     drawOptAll();
+}
+
+function updateOptCoverage() {
+    var area = parseInt(selectedHouse.acreage);
+    var devCount = _optDevices.length;
+    var baseCov = 70 + devCount * 8;
+    if (area > 150) baseCov -= 10;
+    if (area > 200) baseCov -= 5;
+    optCoverage = Math.min(baseCov, 98);
+    if (optCoverage < 0) optCoverage = 0;
+    document.getElementById('optCoverageFill').style.width = optCoverage + '%';
+    document.getElementById('optCoverageText').textContent = optCoverage + '%';
+    var level = getCoverageLevel(optCoverage);
+    document.getElementById('optCoverageEval').textContent = level.text;
+    document.getElementById('optCoverageEval').style.color = level.color;
 }
 
 function generateOptPlan() {
@@ -2157,54 +2398,41 @@ function generateOptPlan() {
         showToast('请先添加现有WiFi设备');
         return;
     }
-
     var area = parseInt(selectedHouse.acreage);
     var optDevices = [];
-
-    // 优化覆盖率必须高于现有组网，至少提升3%
-    var baseOptCoverage;
     if (area <= 60) {
         optDevices = [
-            { id: 'optical', x: 0.15, y: 0.5 },
-            { id: 'wifi6',   x: 0.5,  y: 0.5 }
+            { id: 'maingw', x: 0.15, y: 0.5 },
+            { id: 'subgw',  x: 0.55, y: 0.5 }
         ];
-        baseOptCoverage = 95;
     } else if (area <= 100) {
         optDevices = [
-            { id: 'optical', x: 0.15, y: 0.5 },
-            { id: 'subgw',   x: 0.45, y: 0.35 },
-            { id: 'subgw',   x: 0.75, y: 0.65 }
+            { id: 'maingw', x: 0.15, y: 0.5 },
+            { id: 'subgw',  x: 0.5,  y: 0.35 },
+            { id: 'subgw',  x: 0.75, y: 0.65 }
         ];
-        baseOptCoverage = 96;
     } else if (area <= 150) {
         optDevices = [
-            { id: 'optical', x: 0.1,  y: 0.5 },
-            { id: 'subgw',   x: 0.35, y: 0.3 },
-            { id: 'subgw',   x: 0.65, y: 0.4 },
-            { id: 'wifi6',   x: 0.5,  y: 0.75 }
+            { id: 'maingw', x: 0.1,  y: 0.5 },
+            { id: 'subgw',  x: 0.35, y: 0.3 },
+            { id: 'subgw',  x: 0.65, y: 0.4 },
+            { id: 'subgw',  x: 0.55, y: 0.75 }
         ];
-        baseOptCoverage = 97;
     } else {
         optDevices = [
-            { id: 'optical', x: 0.1,  y: 0.5 },
-            { id: 'subgw',   x: 0.3,  y: 0.3 },
-            { id: 'subgw',   x: 0.55, y: 0.35 },
-            { id: 'wifi6',   x: 0.7,  y: 0.65 },
-            { id: 'subgw',   x: 0.35, y: 0.75 }
+            { id: 'maingw', x: 0.1,  y: 0.5 },
+            { id: 'subgw',  x: 0.3,  y: 0.3 },
+            { id: 'subgw',  x: 0.55, y: 0.35 },
+            { id: 'subgw',  x: 0.7,  y: 0.65 },
+            { id: 'subgw',  x: 0.35, y: 0.75 }
         ];
-        baseOptCoverage = 98;
     }
-    optCoverage = baseOptCoverage;
-
     _optDevices = optDevices;
 
-    // 渲染现有组网设备列表
     var existingHTML = '<h3 style="font-size:14px;color:#666;margin-bottom:10px;">现有组网设备</h3>';
     if (placedDevices.length > 0) {
         var existingCounts = {};
-        placedDevices.forEach(function(pd) {
-            existingCounts[pd.id] = (existingCounts[pd.id] || 0) + 1;
-        });
+        placedDevices.forEach(function(pd) { existingCounts[pd.id] = (existingCounts[pd.id] || 0) + 1; });
         existingHTML += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">' +
             Object.keys(existingCounts).map(function(did) {
                 var dev = DEVICES.find(function(d) { return d.id === did; });
@@ -2217,30 +2445,25 @@ function generateOptPlan() {
     }
     document.getElementById('optExistingDevices').innerHTML = existingHTML;
 
-    // 设置优化组网页面
     var img = document.getElementById('optFloorplanImg');
     img.src = 'svg/' + selectedHouse.id + '.svg';
     img.onload = function() {
         setupCanvasSize('optFloorplanContainer', 'optHeatmapCanvas', 'optDeviceCanvas');
         drawOptAll();
+        updateOptCoverage();
     };
     if (img.complete && img.naturalWidth > 0) {
         setTimeout(function() {
             setupCanvasSize('optFloorplanContainer', 'optHeatmapCanvas', 'optDeviceCanvas');
             drawOptAll();
+            updateOptCoverage();
         }, 50);
     }
 
-    document.getElementById('optCoverageFill').style.width = optCoverage + '%';
-    document.getElementById('optCoverageText').textContent = optCoverage + '%';
-
-    // 渲染推荐设备列表
     var counts = {};
-    optDevices.forEach(function(od) {
-        counts[od.id] = (counts[od.id] || 0) + 1;
-    });
+    optDevices.forEach(function(od) { counts[od.id] = (counts[od.id] || 0) + 1; });
     var optList = document.getElementById('optDeviceList');
-    optList.innerHTML = '<h3 style="font-size:14px;color:#666;margin-bottom:12px;">推荐新增设备</h3>' +
+    optList.innerHTML = '<h3 style="font-size:14px;color:#666;margin-bottom:12px;">推荐组网设备</h3>' +
         Object.keys(counts).map(function(did) {
             var dev = DEVICES.find(function(d) { return d.id === did; });
             return '<div class="plan-card">' +
@@ -2250,26 +2473,19 @@ function generateOptPlan() {
                 '</div>';
         }).join('');
 
-    // 初始化优化组网拖拽
     initOptDrag();
-
-    // 渲染自定义设备添加列表
     renderOptAddDeviceList();
-
     goToStep(3);
-    showToast('最优方案已生成，可拖动调整设备位置');
+    showToast('最优方案已生成！可拖动调整设备位置');
 }
 
-// ============ 优化组网页面：自定义添加设备 ============
 function renderOptAddDeviceList() {
     var list = document.getElementById('optAddDeviceList');
     if (!list) return;
-    // 按照截图要求，5个设备：子网关、WiFi7、WiFi6、万兆光猫、信息箱
-    var addableIds = ['subgw', 'wifi7', 'wifi6', 'optical', 'ibox'];
+    var addableIds = ['maingw', 'subgw', 'wifi7', 'wifi6', 'optical', 'ibox'];
     var addableDevices = addableIds.map(function(id) {
         return DEVICES.find(function(d) { return d.id === id; });
     }).filter(function(d) { return d; });
-
     list.innerHTML = addableDevices.map(function(d) {
         var placed = _optDevices.filter(function(p) { return p.id === d.id; });
         var isPlaced = placed.length > 0;
@@ -2283,13 +2499,10 @@ function renderOptAddDeviceList() {
 }
 
 function addOptDevice(id) {
-    _optDevices.push({
-        id: id,
-        x: 0.15 + Math.random() * 0.7,
-        y: 0.15 + Math.random() * 0.7
-    });
+    _optDevices.push({ id: id, x: 0.15 + Math.random() * 0.7, y: 0.15 + Math.random() * 0.7 });
     renderOptAddDeviceList();
     drawOptAll();
+    updateOptCoverage();
     initOptDrag();
     var dev = DEVICES.find(function(d) { return d.id === id; });
     showToast('已添加 ' + dev.name + '，可拖动调整位置');
@@ -2297,23 +2510,42 @@ function addOptDevice(id) {
 
 // ============ 报告 ============
 function renderReport() {
-    var area = parseInt(selectedHouse.acreage);
-    document.getElementById('rHouseName').textContent = selectedHouse.label;
-    document.getElementById('rHouseArea').textContent = selectedHouse.acreage + '㎡';
-    document.getElementById('rHouseRooms').textContent = currentType + '居';
-
     var beforeCov = currentCoverage || 0;
     var afterCov = optCoverage || 95;
+
+    var reportImg = document.getElementById('reportFloorplanImg');
+    reportImg.src = 'svg/' + selectedHouse.id + '.svg';
+    reportImg.onload = function() {
+        setupCanvasSize('reportFloorplanContainer', 'reportHeatmapCanvas', 'reportDeviceCanvas');
+        drawHeatmap('reportHeatmapCanvas', _optDevices);
+        drawDevices('reportDeviceCanvas', _optDevices, { showLabel: true });
+    };
+    if (reportImg.complete && reportImg.naturalWidth > 0) {
+        setTimeout(function() {
+            setupCanvasSize('reportFloorplanContainer', 'reportHeatmapCanvas', 'reportDeviceCanvas');
+            drawHeatmap('reportHeatmapCanvas', _optDevices);
+            drawDevices('reportDeviceCanvas', _optDevices, { showLabel: true });
+        }, 50);
+    }
+
+    document.getElementById('reportCoverageFill').style.width = afterCov + '%';
+    document.getElementById('reportCoverageText').textContent = afterCov + '%';
+    var afterLevel = getCoverageLevel(afterCov);
+    document.getElementById('reportCoverageEval').textContent = afterLevel.text;
+    document.getElementById('reportCoverageEval').style.color = afterLevel.color;
+
+    var beforeImg = document.getElementById('reportBeforeImg');
+    beforeImg.src = 'svg/' + selectedHouse.id + '.svg';
+    document.getElementById('reportBeforeFill').style.width = beforeCov + '%';
+    document.getElementById('reportBeforeText').textContent = beforeCov + '%';
+
     document.getElementById('rBeforeCov').textContent = beforeCov + '%';
     document.getElementById('rAfterCov').textContent = afterCov + '%';
     var improve = afterCov - beforeCov;
     document.getElementById('rImprove').textContent = (improve >= 0 ? '+' : '') + improve + '%';
 
-    // 汇总推荐设备
     var counts = {};
-    _optDevices.forEach(function(od) {
-        counts[od.id] = (counts[od.id] || 0) + 1;
-    });
+    _optDevices.forEach(function(od) { counts[od.id] = (counts[od.id] || 0) + 1; });
 
     var planList = document.getElementById('rPlanList');
     planList.innerHTML = Object.keys(counts).map(function(did) {
@@ -2350,9 +2582,9 @@ function showToast(msg) {
 
 function shareReport() {
     if (navigator.share) {
-        navigator.share({ title: '全光WiFi组网方案', text: '我的WiFi组网优化方案', url: window.location.href });
+        navigator.share({ title: '全光WiFi服务助手', text: '我的WiFi组网优化方案', url: window.location.href });
     } else {
-        showToast('方案页面可截图分享');
+        showToast('请截图分享报告');
     }
 }
 
@@ -2361,7 +2593,6 @@ renderRoomTabs();
 renderHouseGrid();
 initDrag();
 
-// 窗口大小变化时重绘
 window.addEventListener('resize', function() {
     if (document.getElementById('step2').classList.contains('active')) {
         setupCanvasSize('floorplanContainer', 'heatmapCanvas', 'deviceCanvas');
@@ -2371,7 +2602,13 @@ window.addEventListener('resize', function() {
         setupCanvasSize('optFloorplanContainer', 'optHeatmapCanvas', 'optDeviceCanvas');
         drawOptAll();
     }
+    if (document.getElementById('step4').classList.contains('active')) {
+        setupCanvasSize('reportFloorplanContainer', 'reportHeatmapCanvas', 'reportDeviceCanvas');
+        drawHeatmap('reportHeatmapCanvas', _optDevices);
+        drawDevices('reportDeviceCanvas', _optDevices, { showLabel: true });
+    }
 });
+
 // ============ 网络检测模块 ============
 var _cachedPing = null; // 缓存Ping结果供其他模块使用
 
@@ -2733,7 +2970,7 @@ async function runSpeedTest() {
         '<div style="font-size:14px;color:#999;margin-bottom:16px;">测速结果</div>' +
         '<div class="speed-duo"><div class="speed-duo-item"><div class="num ' + dlGrade + '">' + dlMbps + '</div><div class="unit">Mbps</div><div class="label">下载速度</div></div>' +
         '<div class="speed-duo-item"><div class="num ' + ulGrade + '">' + ulMbps + '</div><div class="unit">Mbps</div><div class="label">上传速度</div></div></div>' +
-        '<div style="margin-top:16px;padding:10px 24px;background:#f0f7ff;border-radius:8px;display:inline-block;font-size:15px;color:#2b7de9;font-weight:600;">' + broadband + '</div>' +
+        '<div style="margin-top:16px;padding:10px 24px;background:#f0f7ff;border-radius:8px;display:inline-block;font-size:15px;color:#4080FF;font-weight:600;">' + broadband + '</div>' +
         '</div>'
     );
 }
@@ -2825,7 +3062,7 @@ async function runWifiDetect() {
         html += '<div style="font-size:12px;color:#999;margin-bottom:6px;">延迟采样 (' + done + '/' + total + ')</div>';
         html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
         pingRTTs.forEach(function(v) {
-            var c = v <= 30 ? '#51cf66' : v <= 80 ? '#2b7de9' : '#ff6b6b';
+            var c = v <= 30 ? '#00B42A' : v <= 80 ? '#4080FF' : '#F53F3F';
             html += '<span style="display:inline-block;padding:3px 8px;border-radius:4px;font-size:12px;background:#f5f5f7;color:' + c + ';">' + v + ' ms</span>';
         });
         html += '</div></div>';
@@ -2843,7 +3080,7 @@ async function runWifiDetect() {
 
     // 最终结果
     var grade = score >= 80 ? '优' : score >= 50 ? '良' : score >= 25 ? '中' : '差';
-    var gradeColor = score >= 80 ? '#51cf66' : score >= 50 ? '#2b7de9' : score >= 25 ? '#f0a020' : '#ff6b6b';
+    var gradeColor = score >= 80 ? '#00B42A' : score >= 50 ? '#4080FF' : score >= 25 ? '#FF9800' : '#F53F3F';
 
     var html = '<div class="detect-card" style="text-align:center;padding:20px 0;">';
     html += '<div style="font-size:48px;font-weight:700;color:' + gradeColor + ';">' + grade + '</div>';
@@ -2859,7 +3096,7 @@ async function runWifiDetect() {
         html += '<div class="detect-card"><h3>延迟采样记录</h3>';
         html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
         pingRTTs.forEach(function(v, i) {
-            var c = v <= 30 ? '#51cf66' : v <= 80 ? '#2b7de9' : '#ff6b6b';
+            var c = v <= 30 ? '#00B42A' : v <= 80 ? '#4080FF' : '#F53F3F';
             html += '<span style="display:inline-block;padding:4px 10px;border-radius:6px;font-size:13px;background:#f5f5f7;color:' + c + ';">#' + (i+1) + ' ' + v + 'ms</span>';
         });
         html += '</div></div>';
@@ -3028,7 +3265,7 @@ async function runVideoDetect() {
     var overallGrade = avgDelay <= 40 ? 'good' : avgDelay <= 100 ? 'ok' : 'bad';
 
     var fhtml = '<div class="detect-card" style="text-align:center;padding:20px 0;">';
-    fhtml += '<div style="font-size:32px;font-weight:700;color:#2b7de9;">' + avgQuality + '</div>';
+    fhtml += '<div style="font-size:32px;font-weight:700;color:#4080FF;">' + avgQuality + '</div>';
     fhtml += '<div style="font-size:14px;color:#999;margin-top:4px;">推荐最高清晰度 · 平均延迟 ' + avgDelay + ' ms</div>';
     fhtml += '</div>';
     fhtml += '<div class="detect-card"><h3>各平台延迟与推荐清晰度</h3>';
@@ -3039,6 +3276,7 @@ async function runVideoDetect() {
 
     showDetectResult(fhtml);
 }
+
 
 </script>
 </body>
